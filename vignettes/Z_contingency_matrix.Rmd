@@ -48,7 +48,21 @@ The following properties hold for this table:
     
   This can be used to test frequency entries for completeness. 
 
-* For $N = 1$ (probabilities) ???
+* For probabilities (N is normed to 1):
+    + probabilities in one row or column are not independent, and thus do not add up to 1. 
+    + The probabilities derived from the margins (unconditional probabilities p_c1, p_r1 and their inverse) 
+    add up to 1. 
+    
+    + probabilities obey a 2x2 table for N = 1.  This table can be multiplied by any N to obtain frequencies. 
+    + As they are probabilities N is known to be 1 by __definition__. 
+    + The probabilities seem to be non-redundant, if three cells can be calculated directly from the input (just 
+    as with frequencies) 
+    + This only holds for cell probabilities; not for the conditional ones; it seems to reproduce Bayes' theorem 
+    in a sense 
+    + This tells us that one cell probability (p(A&B)) and two unconditional probabilities can be sufficient 
+    (e.g., n_c1, N, p_r1, P_c1, should suffice).  this is also the case, if instead of one cell frequency a 
+    conditional probability is provided (as then the cell frequency can be computed from N, and the cell 
+    probability can be calculated). 
 
 ```{r create_terminology_matrix}
 ## 
