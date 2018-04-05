@@ -144,7 +144,7 @@
 #'
 #' @export
 
-riskyr <- function(scen.lbl = "",  ## WAS: txt$scen.lbl,
+riskyr.general <- function(scen.lbl = "",  ## WAS: txt$scen.lbl,
                    scen.lng = txt$scen.lng,
                    scen.txt = txt$scen.txt, popu.lbl = txt$popu.lbl,
                    col.lbl = txt$col.lbl,
