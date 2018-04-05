@@ -33,7 +33,7 @@
 #'
 #' @format An object of class "riskyr"
 #' with *TODO???* entries on textual and numeric information on
-#' a riskyr scenario.
+#' a riskyr scenario.  *TODO: Include tabular representation in the documentation*
 #'
 #' @return A list \code{object} of class "riskyr"
 #' containing information on a risky scenario.
@@ -49,12 +49,12 @@
 #'
 #' @param popu.lbl A brief description of the current target population \code{\link{popu}} or sample.
 #'
-#' @param c.lbl A name to clarify what the frequencies included in the \emph{columns} mean
+#' @param col.lbl A name to clarify what the frequencies included in the \emph{columns} mean
 #' (e.g., the condition in the diagnostic case).
 #' @param c1.lbl A label for the \emph{first column} (e.g., a condition's true state of TRUE).
 #' @param c2.lbl A label for the \emph{second column} (e.g., a condition's true state of FALSE).
 #'
-#' @param r.lbl A name to clarify what the the frequencies in \emph{rows} mean
+#' @param row.lbl A name to clarify what the the frequencies in \emph{rows} mean
 #' (e.g., the decision in the diagnostic case).
 #' @param r1.lbl A label for the \emph{first row} (e.g., predicting the presence of a condition).
 #' @param r2.lbl A label for the \emph{second row} (e.g., predicting the absence of a condition).
@@ -66,29 +66,38 @@
 #'
 #' Numeric elements:
 #'
+#' @param p_r1 The proportion of the 1st row's sum in the total number N (\code{ppod} in the diagnostic case).
+#' @param p_r2 The proportion of the 2nd row's sum in the total number N.
+#' @param p_c1 The proportion of the 1st columns's sum in the total number N (\code{prev} in the diagnostic case).
+#' @param p_c2 The proportion of the 2nd columns's sum in the total number N.
+#'
 #' @param N The number of individuals in the scenario's population.
 #' A suitable value of \code{\link{N}} is computed, if not provided.
 #'
-#' @param p_c1 The proportion of the first column's sum in N.
-#' The second columns proportion is 1 - \code{p_c1} *TODO* (e.g., the \code{\link{prev}}
-#' the probability of condition being \code{TRUE}).
-#' @param pc_r1c1 The proportion of the cell in the first row and first column (\code{\link{sens}}
-#' (i.e., the conditional probability of a positive decision
-#' provided that the condition is \code{TRUE}).
-#' \code{sens} is optional when its complement \code{mirt} is provided.
-#' @param spec The decision's specificity value \code{\link{spec}}
-#' (i.e., the conditional probability
-#' of a negative decision provided that the condition is \code{FALSE}).
-#' \code{spec} is optional when its complement \code{fart} is provided.
-#' @param fart The decision's false alarm rate \code{\link{fart}}
-#' (i.e., the conditional probability
-#' of a positive decision provided that the condition is \code{FALSE}).
-#' \code{fart} is optional when its complement \code{spec} is provided.
+#' @param pc_r1c1 The proportion of the cell frequency in the 1st row and 1st column in its column
+#' (\code{\link{sens} in the diagnostic case}).
+#' @param pc_r1c2 The proportion of the cell frequency in the 1st row and 2nd column in its column
+#' (\code{\link{fart} in the diagnostic case}).
+#' @param pc_r2c1 The proportion of the cell frequency in the 2nd row and 1st column in its column
+#' (\code{\link{mirt} in the diagnostic case}).
+#' @param pc_r2c2 The proportion of the cell frequency in the 2nd row and 2st column in its column.
 #'
-#' @param hi The number of hits \code{\link{hi}} (or true positives).
-#' @param mi The number of misses \code{\link{mi}} (or false negatives).
-#' @param fa The number of false alarms \code{\link{fa}} (or false positives).
-#' @param cr The number of correct rejections \code{\link{cr}} (or true negatives).
+#' @param pr_r1c1 The proportion of the cell frequency in the 1st row and 1st column in its row
+#' (\code{\link{PPV} in the diagnostic case}).
+#' @param pr_r1c2 The proportion of the cell frequency in the 1st row and 2nd column in its row
+#' (\code{\link{FNR} in the diagnostic case}).
+#' @param pr_r2c1 The proportion of the cell frequency in the 2nd row and 1st column in its row
+#' (\code{\link{FOR} in the diagnostic case}).
+#' @param pr_r2c2 The proportion of the cell frequency in the 2nd row and 2st column in its row.
+#' (\code{\link{NPV} in the diagnostic case}).
+#'
+#' @param p_rc12  Proportion of frequency in the diagonal in \code{N}
+#' (r1c1+r2c2; \code{\link{acc}} in the diagnostic case.
+#'
+#' @param n_r1c1 Frequency in 1st cell (1st row, 1st column; \code{\link{hi}} in the diagnostic case).
+#' @param n_r1c2 Frequency in 2nd cell (1st row, 2nd column; \code{\link{fa}} in the diagnostic case).
+#' @param n_r2c1 Frequency in 3rd cell (2nd row, 1st column; \code{\link{mi}} in the diagnostic case).
+#' @param n_r2c2 Frequency in 4th cell (2nd row, 2nd column; \code{\link{cr}} in the diagnostic case).
 #'
 #' Source information:
 #'
@@ -137,27 +146,40 @@ riskyr <- function(scen.lbl = "",  ## WAS: txt$scen.lbl,
                    scen.lng = txt$scen.lng,
                    scen.txt = txt$scen.txt, popu.lbl = txt$popu.lbl,
                    col.lbl = txt$col.lbl,
-                   col1.lbl = txt$cond.true.lbl, col2.lbl = txt$cond.false.lbl,
+                   c1.lbl = txt$cond.true.lbl, c2.lbl = txt$cond.false.lbl,
                    row.lbl = txt$dec.lbl,
-                   row1.lbl = txt$dec.pos.lbl, row2.lbl = txt$dec.neg.lbl,
+                   r1.lbl = txt$dec.pos.lbl, r2.lbl = txt$dec.neg.lbl,
                    ## Rows and colums might be reversed, as rows are usually the first unit;
                    ## original entries are retained.
-                   row1.col1.lbl = txt$hi.lbl, row2.col2.lbl = txt$mi.lbl,
-                   row1.col2.lbl = txt$fa.lbl, row2.col2.lbl = txt$cr.lbl,
+                   r1c1.lbl = txt$hi.lbl, r2c2.lbl = txt$mi.lbl,
+                   r1c2.lbl = txt$fa.lbl, r2c2.lbl = txt$cr.lbl,
                    ## Numeric inputs:
-                   ##+++Currently HERE+++##
-                   p_n.col1.N = NA,  # proportion of n_col1/N; formerly prev.
-                   sens = NA,
-                   spec = NA,
-                   fart = NA,
-                   N = NA,  ## WAS: freq$N,
-                   n_row1.col1 = NA,  # was hi.
-                   mi = NA,  # was mi.
-                   fa = NA,  # was fa.
-                   cr = NA,  # was cr.
+                   p_r1 = NA,  # proportion of 1st row in total number N; formerly ppod.
+                   p_r2 = NA,  # proportion of 2st row in total number N; formerly 1-ppod.
+                   p_c1 = NA,  # proportion of 1st col in total number N; formerly prev.
+                   p_c2 = NA,  # proportion of 2st col in total number N; formerly 1-prev.
+                   ## Column proportions (pc):
+                   pc_r1c1 = NA,  # colum proportion (pc) of r1c1; formerly sens.
+                   pc_r2c1 = NA,  # the inverse of pc_r1c1; false negative rate.
+                   pc_r1c2 = NA,  # column proportion of r1c2; formerly fart.
+                   pc_r2c2 = NA,  # the inverse of pc_r1c2; formerly spec.
+                   ## Row proportions (pr):
+                   pr_r1c1 = NA,  # row proportion (pr) of r1c1; formerly PPV.
+                   pr_r1c2 = NA,  # the inverse of pr_r1c1; false negative rate.
+                   pr_r2c1 = NA,  # row proportion (pr) of r2c1; formerly FOR.
+                   pr_r2c2 = NA,  # inverse of pr_r2c1; formerly NPV.
+                   ## Diagonal proportion (Formerly accuracy):
+                   p_rc12 = NA,  # proportion in the diagonal (r1c1+r2c2); formerly accuracy.
+                   ## Frequencies:
+                   N = NA,  ## Total frequency in the table.
+                   n_r1c1 = NA,  # was hi.
+                   n_r1c2 = NA,  # was fa.
+                   n_r2c1 = NA,  # was mi.
+                   n_r2c2 = NA,  # was cr.
                    scen.src = txt$scen.src,
                    scen.apa = txt$scen.apa) {
 
+  ##+++Currently HERE+++##
   ## (0): Initialize some stuff: ------
   freqs <- NA
   probs <- NA
@@ -338,7 +360,7 @@ riskyr <- function(scen.lbl = "",  ## WAS: txt$scen.lbl,
 
 ## (1b) Function to create diagnostic riskyr scenarios: ------
 
-#' Create riskyr scenarios.
+#' Create riskyr scenarios in the diagnostic frame.
 #'
 #' The instantiation function \code{riskyr} is used to create
 #' scenarios of class "riskyr",
