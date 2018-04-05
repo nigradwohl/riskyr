@@ -66,13 +66,19 @@
 #'
 #' Numeric elements:
 #'
+#' @param N The number of individuals in the scenario's population.
+#' A suitable value of \code{\link{N}} is computed, if not provided.
+#'
+#' @param n_r1c1 Frequency in 1st cell (1st row, 1st column; \code{\link{hi}} in the diagnostic case).
+#' @param n_r1c2 Frequency in 2nd cell (1st row, 2nd column; \code{\link{fa}} in the diagnostic case).
+#' @param n_r2c1 Frequency in 3rd cell (2nd row, 1st column; \code{\link{mi}} in the diagnostic case).
+#' @param n_r2c2 Frequency in 4th cell (2nd row, 2nd column; \code{\link{cr}} in the diagnostic case).
+#'
 #' @param p_r1 The proportion of the 1st row's sum in the total number N (\code{ppod} in the diagnostic case).
 #' @param p_r2 The proportion of the 2nd row's sum in the total number N.
 #' @param p_c1 The proportion of the 1st columns's sum in the total number N (\code{prev} in the diagnostic case).
 #' @param p_c2 The proportion of the 2nd columns's sum in the total number N.
 #'
-#' @param N The number of individuals in the scenario's population.
-#' A suitable value of \code{\link{N}} is computed, if not provided.
 #'
 #' @param pc_r1c1 The proportion of the cell frequency in the 1st row and 1st column in its column
 #' (\code{\link{sens} in the diagnostic case}).
@@ -94,10 +100,6 @@
 #' @param p_rc12  Proportion of frequency in the diagonal in \code{N}
 #' (r1c1+r2c2; \code{\link{acc}} in the diagnostic case.
 #'
-#' @param n_r1c1 Frequency in 1st cell (1st row, 1st column; \code{\link{hi}} in the diagnostic case).
-#' @param n_r1c2 Frequency in 2nd cell (1st row, 2nd column; \code{\link{fa}} in the diagnostic case).
-#' @param n_r2c1 Frequency in 3rd cell (2nd row, 1st column; \code{\link{mi}} in the diagnostic case).
-#' @param n_r2c2 Frequency in 4th cell (2nd row, 2nd column; \code{\link{cr}} in the diagnostic case).
 #'
 #' Source information:
 #'
@@ -154,6 +156,13 @@ riskyr <- function(scen.lbl = "",  ## WAS: txt$scen.lbl,
                    r1c1.lbl = txt$hi.lbl, r2c2.lbl = txt$mi.lbl,
                    r1c2.lbl = txt$fa.lbl, r2c2.lbl = txt$cr.lbl,
                    ## Numeric inputs:
+                   ## Frequencies:
+                   N = NA,  ## Total frequency in the table.
+                   n_r1c1 = NA,  # was hi.
+                   n_r1c2 = NA,  # was fa.
+                   n_r2c1 = NA,  # was mi.
+                   n_r2c2 = NA,  # was cr.
+                   ## Probabilities / proportions:
                    p_r1 = NA,  # proportion of 1st row in total number N; formerly ppod.
                    p_r2 = NA,  # proportion of 2st row in total number N; formerly 1-ppod.
                    p_c1 = NA,  # proportion of 1st col in total number N; formerly prev.
@@ -170,12 +179,6 @@ riskyr <- function(scen.lbl = "",  ## WAS: txt$scen.lbl,
                    pr_r2c2 = NA,  # inverse of pr_r2c1; formerly NPV.
                    ## Diagonal proportion (Formerly accuracy):
                    p_rc12 = NA,  # proportion in the diagonal (r1c1+r2c2); formerly accuracy.
-                   ## Frequencies:
-                   N = NA,  ## Total frequency in the table.
-                   n_r1c1 = NA,  # was hi.
-                   n_r1c2 = NA,  # was fa.
-                   n_r2c1 = NA,  # was mi.
-                   n_r2c2 = NA,  # was cr.
                    scen.src = txt$scen.src,
                    scen.apa = txt$scen.apa) {
 
