@@ -37,6 +37,23 @@ The following "contingency matrix"" is a generalization of the "confusion matrix
 | (a) by condition  | `pc_r1c1` = `r1c1`/`c1` `pc_r2c1` = `r2`/`c1`   | `pc_r1c2` = `r1c2`/`c2`   `pc_r2c2` = `r2c2`/`c2` | `p_r1` = `n_r1`/`N` |  `rc12` = `diag`/`N` = (`r1c1`+`r2c2`)/`N`|
 
 
+The following properties hold for this table: 
+
+* For frequencies, (i.e., the inner three rows and columns):
+    + if at least any two entries in a row or column are provided, all values in _this_ row or column can be
+    calculated. 
+    + As soon, as there are three values in one row or column, there is redundancy, and more input is needed. 
+    + At least three different cells need to be in a row or column with two filled cells in this row or column 
+    (kind of an s-shape). 
+    
+  This can be used to test frequency entries for completeness. 
+
+* For $N = 1$ (probabilities) ???
+
+```{r create_terminology_matrix}
+## 
+```
+
 
 ## OLDER MATERIALS
 
