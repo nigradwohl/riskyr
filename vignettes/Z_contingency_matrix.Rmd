@@ -98,8 +98,8 @@ freq_mat
 Create table: 
 
 ```{r show_table, results='asis'}
-colnames(freq_mat) <- c(paste0("c", 1:n_col), "Sum")
-rownames(freq_mat) <- c(paste0("r", 1:n_row), "Sum")
+colnames(freq_mat) <- c(paste0("col", 1:n_col), "Sum")
+rownames(freq_mat) <- c(paste0("row", 1:n_row), "Sum")
   
 knitr::kable(freq_mat)
 ```
