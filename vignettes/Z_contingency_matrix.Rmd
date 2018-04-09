@@ -7,8 +7,10 @@ output:
     fig_caption: yes
 vignette: >
   %\VignetteIndexEntry{Confusion Matrix and Metrics}
-  %\VignetteEngine{knitr::rmarkdown}
   %\VignetteEncoding{UTF-8}
+  %\VignetteEngine{knitr::rmarkdown}
+editor_options: 
+  chunk_output_type: console
 ---
 
 ```{r setup, include = FALSE}
@@ -65,8 +67,41 @@ The following properties hold for this table:
     conditional probability is provided (as then the cell frequency can be computed from N, and the cell 
     probability can be calculated). 
 
+
+Note that the probabilities in the margins follow `nrow_prob == nrow_freq - 1` and `ncol_prob == ncol_freq - 1` (ignoring cases with partial cell sums like `r1c1 + r1c2 / r1c1 + r1c2 + r1c3`). 
+
 ```{r create_terminology_matrix}
-## 
+## define rows with frequencies (table extent), example 2x2:
+n_row <- 2
+n_col <- 2
+
+# get the single frequencies:
+row_lab <- paste0("r", 1:n_row)
+col_lab <- paste0("c", 1:n_col)
+
+freq_labs <- expand.grid(row_lab, col_lab)
+freq_mat <- matrix(paste0(freq_labs[, 1], freq_labs[, 2]), ncol = n_col, nrow = n_row)
+
+# get labels for the sums:
+rowsum_lab <- paste0("n_r", 1:n_row)
+colsum_lab <- c(paste0("n_c", 1:n_col), "N")  # add N in the end. 
+
+## (1) Assemble prelimnary table:
+freq_mat <- cbind(freq_mat, rowsum_lab, deparse.level = 0)
+freq_mat <- rbind(freq_mat, colsum_lab, deparse.level = 0)
+freq_mat
+
+## (2) Adding the probabilities:
+```
+
+
+Create table: 
+
+```{r show_table, results='asis'}
+colnames(freq_mat) <- c(paste0("c", 1:n_col), "Sum")
+rownames(freq_mat) <- c(paste0("r", 1:n_row), "Sum")
+  
+knitr::kable(freq_mat)
 ```
 
 
