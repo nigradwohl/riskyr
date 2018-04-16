@@ -1,7 +1,7 @@
 ---
 title: "Contingency Matrix"
 author: "SPDS, uni.kn"
-date: "2018 03 26"
+date: "2018 04 16"
 output: 
   rmarkdown::html_vignette: 
     fig_caption: yes
@@ -70,7 +70,11 @@ The following properties hold for this table:
 
 Note that the probabilities in the margins follow `nrow_prob == nrow_freq - 1` and `ncol_prob == ncol_freq - 1` (ignoring cases with partial cell sums like `r1c1 + r1c2 / r1c1 + r1c2 + r1c3`). 
 
-```{r create_terminology_matrix}
+## Use R-code to create the respecitve input-table (label-tabels):
+
+Create frequency table: 
+
+```{r create_terminology_matrix_freq}
 ## define rows with frequencies (table extent), example 2x2:
 n_row <- 2
 n_col <- 2
@@ -94,14 +98,33 @@ freq_mat
 ## (2) Adding the probabilities:
 ```
 
+Showing the table as `kable`
 
-Create table: 
-
-```{r show_table, results='asis'}
+```{r show_table_freq, results='asis'}
 colnames(freq_mat) <- c(paste0("col", 1:n_col), "Sum")
 rownames(freq_mat) <- c(paste0("row", 1:n_row), "Sum")
   
 knitr::kable(freq_mat)
+```
+
+
+Showing the table as figure 
+
+```{r show_table_freq_fig}
+
+## Get plot dimensions: 
+plot_dim <- dim(freq_mat) + 1
+
+## Initialize plot of respective size: 
+plot(x = 1, xlim = c(-1, plot_dim[1] + 1), ylim = c(-1, plot_dim[2] + 1),
+     type = "n")
+
+## Get coordinates
+coords <- expand.grid(x = 1:plot_dim[1], y = plot_dim[2]:1)
+
+entries <- c("", colnames(freq_mat),
+             unlist(freq_mat)
+             )
 ```
 
 
