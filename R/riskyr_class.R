@@ -141,10 +141,20 @@ riskyr_tabular <- function(x,
   # TODO!!!
   ncols <- ncol(x)
     ## (a) Test whether frequency, probability or mixed table:
-    x > 1  # x > 1 is diagnostic for at least some frequencies.
       ## (i) Frequency table:
       ## A table is a frequency table, if the last column/ row is the sum of all preceeding ones.
       ## This property should not hold for probabilities (except borderline cases?):
+
+      ## Conditions for absolute frequency table:
+      any(x > 1)  # there are frequencies included, as probabilities are only defined between 0 and 1.
+
+
+      any(x < 1)  # this is sufficient to say that probabilities or relative frequencies have been provided.
+
+      ## Together the above conditions are sufficient to conclude that the table is mixed.
+
+      ## Condition for relative frequency table:
+      midpoint <- (dim(x) + 1) / 2  # find the table's midpoint.
 
 
     ## (b) Test whether input is sufficient for:
