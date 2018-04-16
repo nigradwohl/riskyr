@@ -113,8 +113,49 @@ riskyr_tabular <- function(x,
                            scen.src = txt$scen.src,
                            scen.apa = txt$scen.apa) {
 
+  ## Tables for testing purposes:
+    complete_freq <- rbind(c(17, 25),
+                      c(28, 30)
+                      )
+    ## Sums:
+    complete_freq <- cbind(complete_freq, rowSums(complete_freq))
+    complete_freq <- rbind(complete_freq, colSums(complete_freq))
+
+    ## Probs:
+    p_row <- t(apply(complete_freq, 1, function(X) X/X[3]))[,1:2]
+    p_col <- apply(complete_freq, 2, function(X) X/X[3])[1:2, ]
+
+    complete_tab <- cbind(complete_freq, p_row)  # add the row probabilities.
+    complete_tab <- rbind(complete_tab, cbind(p_col, NA, NA))
+    complete_tab[4, 4] <- (complete_tab[1, 1] + complete_tab[2, 2]) / complete_tab[3, 3]
+    complete_tab
+    x <- complete_tab
+
+  ## (0) Consistency checks: ------
+    ## (a) Are labels for every cell provided (if any)?
+    if (!is.null(x.lbls)) {
+      if (dim(x) != dim(x.lbls)) warning("Labels provided do not match input table. Default labels are used. ")
+    }
+
+  ## (1) Test the table for completeness: ------
+  # TODO!!!
+  ncols <- ncol(x)
+    ## (a) Test whether frequency, probability or mixed table:
+    x > 1  # x > 1 is diagnostic for at least some frequencies.
+      ## (i) Frequency table:
+      ## A table is a frequency table, if the last column/ row is the sum of all preceeding ones.
+      ## This property should not hold for probabilities (except borderline cases?):
 
 
+    ## (b) Test whether input is sufficient for:
+
+      ##(i) Relative frequency table (N = 1):
+
+      ##(ii) Absolute frequency table:
+
+  ## (2) Complete table: ------
+
+  ## (3) Gather information in an appropriate object: ------
 
   ##+++Currently HERE+++##
   ## (0): Initialize some stuff: ------
