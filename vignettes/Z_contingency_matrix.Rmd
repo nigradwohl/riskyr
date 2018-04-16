@@ -116,16 +116,40 @@ Showing the table as figure
 plot_dim <- dim(freq_mat) + 1
 
 ## Initialize plot of respective size: 
-plot(x = 1, xlim = c(-1, plot_dim[1] + 1), ylim = c(-1, plot_dim[2] + 1),
-     type = "n")
+margin <- 0.2  # set a margin around the entries.
+
+plot(x = 1, xlim = c(1 - margin, plot_dim[1] + margin), ylim = c(1 - margin, plot_dim[2] + margin),
+     type = "n",
+     xaxt = "n", xlab = "",
+     yaxt = "n", ylab = ""
+     )
 
 ## Get coordinates
 coords <- expand.grid(x = 1:plot_dim[1], y = plot_dim[2]:1)
 
+## Get corresponding entries:
 entries <- c("", colnames(freq_mat),
-             unlist(freq_mat)
+             c(apply(cbind(rownames(freq_mat), freq_mat), 1, c))  # convet into rows.
              )
+
+## Set headings in boldface:
+headings <- ifelse(coords$x == 1 | coords$y == 4, 2, 1)
+
+# Create table with coordinates and entries:
+coo_ent <- cbind(coords, entries, headings)
+
+## Add text:
+text(x = coo_ent$x, y = coo_ent$y, labels = coo_ent$entries, font = headings)
+
+## Add lines:
+# grid(nx = plot_dim[1], ny = plot_dim[2],
+#      col = "black", lty = 1)
+
+abline(v = 1:3 + margin)
+abline(h = 1:3 + 0.5)
 ```
+
+Can be made prettier but does already work fine. 
 
 
 ## OLDER MATERIALS
