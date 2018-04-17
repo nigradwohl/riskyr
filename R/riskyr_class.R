@@ -117,18 +117,34 @@ riskyr_tabular <- function(x,
     complete_freq <- rbind(c(17, 25),
                       c(28, 30)
                       )
-    ## Sums:
+    ## Sums (frequency table):
     complete_freq <- cbind(complete_freq, rowSums(complete_freq))
     complete_freq <- rbind(complete_freq, colSums(complete_freq))
 
-    ## Probs:
-    p_row <- t(apply(complete_freq, 1, function(X) X/X[3]))[,1:2]
-    p_col <- apply(complete_freq, 2, function(X) X/X[3])[1:2, ]
+    rel_freq <- complete_freq / complete_freq[dim(complete_freq)[1], dim(complete_freq)[2]]
 
-    complete_tab <- cbind(complete_freq, p_row)  # add the row probabilities.
-    complete_tab <- rbind(complete_tab, cbind(p_col, NA, NA))
-    complete_tab[4, 4] <- (complete_tab[1, 1] + complete_tab[2, 2]) / complete_tab[3, 3]
-    complete_tab
+    ## Probs:
+      p_row <- t(apply(complete_freq, 1, function(X) X/X[3]))[,1:2]
+      p_col <- apply(complete_freq, 2, function(X) X/X[3])[1:2, ]
+
+    ## Complete table (freqs and probs):
+      complete_tab <- cbind(complete_freq, p_row)  # add the row probabilities.
+      complete_tab <- rbind(complete_tab, cbind(p_col, NA, NA))
+      complete_tab[4, 4] <- (complete_tab[1, 1] + complete_tab[2, 2]) / complete_tab[3, 3]
+      complete_tab
+
+
+    ## Relative frequency table:
+      tab_rel <- cbind(rel_freq, p_row)
+      tab_rel <- rbind(tab_rel, cbind(p_col, NA, NA))
+      v_diag <- diag(tab_rel)  # use instead of below statements.
+      dix <- which(is.na(v_diag))[1]  # index value for diagonal (symmertric table only).
+      vals_diag <- v_diag[!is.na(v_diag)]  #exclude NA-values.
+      nmrtr <- vals_diag[1:(length(vals_diag) - 1)]  # exclude last element (N) to obtain numerator.
+      tab_rel[dix, dix] <- (sum(nmrtr)) / vals_diag[length(vals_diag)]
+      tab_rel
+
+    ## assign to x:
     x <- complete_tab
 
   ## (0) Consistency checks: ------
@@ -154,7 +170,22 @@ riskyr_tabular <- function(x,
       ## Together the above conditions are sufficient to conclude that the table is mixed.
 
       ## Condition for relative frequency table:
-      midpoint <- (dim(x) + 1) / 2  # find the table's midpoint.
+      midpoint <- function(x) {(dim(x) + 1) / 2}  # find the table's midpoint.
+        ## The sum of any two numbers above the midpoint (excluding it) is <= 1:
+        ix <- midpoint(rel_freq)
+        rel_freq[ix[1], ix[2]]
+        tab_test <- rel_freq
+        tab_test <- tab_test[1:ix[1], 1:ix[2]]
+
+        ix <- midpoint(tab_rel)
+        tab_test <- tab_rel
+        tab_test <- tab_test[1:ix[1], 1:ix[2]]
+        tab_test[ix[1], ix[2]] <- NA
+
+
+        f <- function(x) combn(x, m = 2, FUN = sum, simplify = TRUE)
+        apply(tab_test, 1, FUN = combn, 2, sum)  # this should not yield any values above 1.
+        apply(tab_test, 2, FUN = combn, 2, sum)  # this should not yield any values above 1.
 
 
     ## (b) Test whether input is sufficient for:
