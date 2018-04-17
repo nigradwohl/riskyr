@@ -172,10 +172,11 @@ riskyr_tabular <- function(x,
       ## Condition for relative frequency table:
       midpoint <- function(x) {(dim(x) + 1) / 2}  # find the table's midpoint.
         ## The sum of any two numbers above the midpoint (excluding it) is <= 1:
-        ix <- midpoint(rel_freq)
+        ix <- midpoint(rel_freq)  # get midpoint.
         rel_freq[ix[1], ix[2]]
-        tab_test <- rel_freq
-        tab_test <- tab_test[1:ix[1], 1:ix[2]]
+        tab_test <- rel_freq  # assign for testing.
+        tab_test <- tab_test[1:ix[1], 1:ix[2]]  # truncate matrix on midpoint (including it).
+        tab_test[ix[1], ix[2]] <- NA  # here setting the midpoint NA may have unwanted consequences!
 
         ix <- midpoint(tab_rel)
         tab_test <- tab_rel
@@ -183,9 +184,13 @@ riskyr_tabular <- function(x,
         tab_test[ix[1], ix[2]] <- NA
 
 
-        f <- function(x) combn(x, m = 2, FUN = sum, simplify = TRUE)
-        apply(tab_test, 1, FUN = combn, 2, sum)  # this should not yield any values above 1.
-        apply(tab_test, 2, FUN = combn, 2, sum)  # this should not yield any values above 1.
+        apply(tab_test, 1, FUN = combn, 2, sum)  # rows: this should not yield any values above 1.
+        apply(tab_test, 2, FUN = combn, 2, sum)  # cols: this should not yield any values above 1.
+
+        ## Note: If the midpoint is a global maximum (it is either 1 or greater),
+        ## it is most likely a full table.  However, N may also be NA or CR may be 1...
+
+        ## If there is no integer midpoint, it has to be a frequency table (as the other is symmetric).
 
 
     ## (b) Test whether input is sufficient for:
