@@ -206,7 +206,7 @@ riskyr_tabular <- function(x,
         ## If one of these equations is solvable, the cell can be calculated.
 
         ## E.g. in a 2x2 table:
-          ## - r1c1 = n_r1 - n_r1
+          ## - r1c1 = n_r1 - r1c2
           ## - r1c1 = n_c1 - r2c1
           ## - r1c1 = n_c1 * pc_r1c1  # if pc_r2c1 is given, it works as well.
 
@@ -229,6 +229,8 @@ riskyr_tabular <- function(x,
       ## (ii) Absolute frequency table:
 
   ## (2) Complete the table: ------
+
+    ## (a) Check, which values are missing
 
 
   ## (3) Gather information in an appropriate object: ------
