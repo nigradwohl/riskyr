@@ -187,7 +187,7 @@ freq_mat
 
 Showing the table as `kable`
 
-```{r show_table_freq, results='asis'}
+```{r show_table_full, results='asis'}
 colnames(freq_mat) <- c(paste0("col", 1:n_col), "Sum", paste0("c", 1:n_col, "br"))
 rownames(freq_mat) <- c(paste0("row", 1:n_row), "Sum", paste0("r", 1:n_col, "bc"))
 
@@ -199,7 +199,7 @@ knitr::kable(freq_mat)
 
 Showing the table as figure 
 
-```{r show_table_freq_fig}
+```{r show_table_full_fig}
 
 ## Get plot dimensions: 
 plot_dim <- dim(freq_mat) + 1
