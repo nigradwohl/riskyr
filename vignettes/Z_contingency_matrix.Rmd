@@ -74,7 +74,7 @@ Note that the probabilities in the margins follow `nrow_prob == nrow_freq - 1` a
     + one has two conditional probabilities and the corresponding unconditional probability (if you have the row probabilities you need the unconditional probabilities to be in a certain row; e.g., PPV, NPV, and ppod)  
     + one has two unconditional probabilities and any conditional probability (setting $N = 1$ allows to calculate all relative sums and relative frequencies; having one frequency allows to calculate $N$, as relative cell frequencies are defined by $cell frequency/N$, and thus: $N = cell frequency/relative cell frequency$; the rest is trivial). 
     
-* For frequencies one needs at least 2 occupied cells in both dimensions plus one additional non-redunddatn cell (e.g., hi+mi and dec.neg+N or hi+fa+cr+N).  However, information may not be redundant (if it is, more occupied cells are needed). 
+* For frequencies one needs at least 2 occupied cells in both dimensions plus one additional non-redundant cell (e.g., hi+mi and dec.neg+N or hi+fa+cr+N OR hi+mi+cond.false+N+any of the remaining).  
 
 ```{r}
 ## An example table: 
@@ -116,9 +116,17 @@ complete_freq <- rbind(c(17, 25),
 ```
 
 
-* Probably, if you can generate one of the two above cases by a mixture, then it works out as well: e.g., PPV instead of hits and ppod instead of N.  It follows that 
+* Probably, if you can generate one of the two above cases by a mixture, then it works out as well: e.g., PPV instead of hits and ppod instead of N.  You could replace any frequency by a probability that includes this frequency. 
 
-### Use R-code to create the respecitve input-table (label-tabels):
+* It may be even more general, that any two pairs of non-redundant inputs is sufficient.  But what does non-redundancy mean? 
+    + ??? 
+
+__Potential implementations__
+
+* Ask for each cell, wheter one of the defining equations can be solved 
+* Find a condition that accounts for calculability 
+
+### Use R-code to create the respective input-table (label-tabels):
 
 #### Create frequency table: 
 
