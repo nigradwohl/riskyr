@@ -153,24 +153,27 @@ riskyr_tabular <- function(x,
       if (dim(x) != dim(x.lbls)) warning("Labels provided do not match input table. Default labels are used. ")
     }
 
-  ## (1) Test the table for completeness: ------
-  # TODO!!!
-  ncols <- ncol(x)
-    ## (a) Test whether frequency, probability or mixed table:
-      ## (i) Frequency table:
-      ## A table is a frequency table, if the last column/ row is the sum of all preceeding ones.
-      ## This property should not hold for probabilities (except borderline cases?):
+  ## (1) Test the type of table (frequency, relative frequency or including probabilities):
 
-      ## Conditions for absolute frequency table:
-      any(x > 1)  # there are frequencies included, as probabilities are only defined between 0 and 1.
+    ## (a) Test the type of table: -------
+
+      ## (a2) Some notes on how to potentially test:----
+        ncols <- ncol(x)
+        ## (a) Test whether frequency, probability or mixed table:
+        ## (i) Frequency table:
+        ## A table is a frequency table, if the last column/ row is the sum of all preceeding ones.
+        ## This property should not hold for probabilities (except borderline cases?):
+
+        ## Conditions for absolute frequency table:
+        any(x > 1)  # there are frequencies included, as probabilities are only defined between 0 and 1.
 
 
-      any(x < 1)  # this is sufficient to say that probabilities or relative frequencies have been provided.
+        any(x < 1)  # this is sufficient to say that probabilities or relative frequencies have been provided.
 
-      ## Together the above conditions are sufficient to conclude that the table is mixed.
+        ## Together the above conditions are sufficient to conclude that the table is mixed.
 
-      ## Condition for relative frequency table:
-      midpoint <- function(x) {(dim(x) + 1) / 2}  # find the table's midpoint.
+        ## Condition for relative frequency table:
+        midpoint <- function(x) {(dim(x) + 1) / 2}  # find the table's midpoint.
         ## The sum of any two numbers above the midpoint (excluding it) is <= 1:
         ix <- midpoint(rel_freq)  # get midpoint.
         rel_freq[ix[1], ix[2]]
@@ -192,18 +195,44 @@ riskyr_tabular <- function(x,
 
         ## If there is no integer midpoint, it has to be a frequency table (as the other is symmetric).
 
+    ## (b) If it is a (relative) frequency table, expand it by NAs to become a full table: ------
+
+
+
+  ## (2) Test the table for completeness: ------
+  # TODO!!!
+
+        ## Note: each cell can be described by a set of linear equations based on rows and cols.
+        ## If one of these equations is solvable, the cell can be calculated.
+
+        ## E.g. in a 2x2 table:
+          ## - r1c1 = n_r1 - n_r1
+          ## - r1c1 = n_c1 - r2c1
+          ## - r1c1 = n_c1 * pc_r1c1  # if pc_r2c1 is given, it works as well.
+
+          ## Note, that as soon as in a row or column two frequencies or
+          ## one frequency and one probability are given, the row or coumn can be calculated
+          ## (depends heavily on the probabilities adding up to 1,
+          ## as it doesn't matter, which probability is given).
+          ## Proof???
+        # TODO: elaborate equation systems for each cell (dynamically based on the table?)
+
+        ## However, calculation of each cell may be computationally costly.
+        ## Testing the equations via determinants may be a partial solution.
+
+
 
     ## (b) Test whether input is sufficient for:
 
-      ##(i) Relative frequency table (N = 1):
+      ## (i) Relative frequency table (N = 1):
 
-      ##(ii) Absolute frequency table:
+      ## (ii) Absolute frequency table:
 
-  ## (2) Complete table: ------
+  ## (2) Complete the table: ------
+
 
   ## (3) Gather information in an appropriate object: ------
 
-  ##+++Currently HERE+++##
   ## (0): Initialize some stuff: ------
   freqs <- NA
   probs <- NA
