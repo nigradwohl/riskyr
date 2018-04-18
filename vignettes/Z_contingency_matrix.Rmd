@@ -70,6 +70,54 @@ The following properties hold for this table:
 
 Note that the probabilities in the margins follow `nrow_prob == nrow_freq - 1` and `ncol_prob == ncol_freq - 1` (ignoring cases with partial cell sums like `r1c1 + r1c2 / r1c1 + r1c2 + r1c3`). 
 
+* For a 2x2 table (probably generalizes): If one can calculate all probabilities (accuracy is not necessary) and __any__ frequency, the table is fully defined.  All probabilities can be calculated when :
+    + one has two conditional probabilities and the corresponding unconditional probability (if you have the row probabilities you need the unconditional probabilities to be in a certain row; e.g., PPV, NPV, and ppod)  
+    + one has two unconditional probabilities and any conditional probability (setting $N = 1$ allows to calculate all relative sums and relative frequencies; having one frequency allows to calculate $N$, as relative cell frequencies are defined by $cell frequency/N$, and thus: $N = cell frequency/relative cell frequency$; the rest is trivial). 
+    
+* For frequencies one needs at least 2 occupied cells in both dimensions plus one additional non-redunddatn cell (e.g., hi+mi and dec.neg+N or hi+fa+cr+N).  However, information may not be redundant (if it is, more occupied cells are needed). 
+
+```{r}
+## An example table: 
+complete_freq <- rbind(c(17, 25),
+                      c(28, 30)
+                      )
+    ## Sums (frequency table):
+    complete_freq <- cbind(complete_freq, rowSums(complete_freq))
+    complete_freq <- rbind(complete_freq, colSums(complete_freq))
+
+    rel_freq <- complete_freq / complete_freq[dim(complete_freq)[1], dim(complete_freq)[2]]
+
+    ## Probs:
+      p_row <- t(apply(complete_freq, 1, function(X) X/X[3]))[,1:2]
+      p_col <- apply(complete_freq, 2, function(X) X/X[3])[1:2, ]
+
+    ## Complete table (freqs and probs):
+      complete_tab <- cbind(complete_freq, p_row)  # add the row probabilities.
+      complete_tab <- rbind(complete_tab, cbind(p_col, NA, NA))
+      complete_tab[4, 4] <- (complete_tab[1, 1] + complete_tab[2, 2]) / complete_tab[3, 3]
+      complete_tab
+
+
+    ## Relative frequency table:
+      tab_rel <- cbind(rel_freq, p_row)
+      tab_rel <- rbind(tab_rel, cbind(p_col, NA, NA))
+      v_diag <- diag(tab_rel)  # use instead of below statements.
+      dix <- which(is.na(v_diag))[1]  # index value for diagonal (symmertric table only).
+      vals_diag <- v_diag[!is.na(v_diag)]  #exclude NA-values.
+      nmrtr <- vals_diag[1:(length(vals_diag) - 1)]  # exclude last element (N) to obtain numerator.
+      tab_rel[dix, dix] <- (sum(nmrtr)) / vals_diag[length(vals_diag)]
+      tab_rel
+
+    ## assign to x:
+    x <- complete_tab
+    
+## Showing the examples: 
+    
+```
+
+
+* Probably, if you can generate one of the two above cases by a mixture, then it works out as well: e.g., PPV instead of hits and ppod instead of N.  It follows that 
+
 ### Use R-code to create the respecitve input-table (label-tabels):
 
 #### Create frequency table: 
