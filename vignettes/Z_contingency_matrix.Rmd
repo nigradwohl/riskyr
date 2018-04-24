@@ -356,11 +356,23 @@ ex_tab <- ex_tab[1:3, 1:3]  # frequencies only.
   ## Version 4 (should not work):
   # ex_tab[c(1, 1, 3, 3), c(1, 3, 1, 3)] <- NA
   # ex_tab[2, 2] <- NA
+  
+## Testing with probabilities:
+exp_tab <- complete_tab
+exp_tab[1, c(2, 3)] <- NA
+
+  ## Note, one frequency and one probability are necessary and sufficient to calculate a row or column.
 ```
 
 
 ```{r recursive_function}
+## For frequency part:
 table <- ex_tab  
+
+## For part including probabilities: 
+table <- complete_tab
+
+
 table  # show table for checking reasons:
 
 ## Function for recursive generation: 
@@ -445,12 +457,27 @@ calc_tab <- function(table) {
           
         }
         
-        return(table)
+        
         
         # TODO: Perform consistency checks or update NA-matrix in between steps?
         # TODO: Provide an informative error message upon insufficient inputs. 
     
-  ## (B) Include probabilities
+  ## (B) Include probabilities: ------
+    ## (1) Calculate all possible probabilities (see above?): ------
+      ## (a) Mute the frequency proportion: 
+      ptab <- table
+      
+      ## Set the dimensions of the frequency part:
+      frow <- 3
+      fcol <- 3
+        ## This may be done dynamically in the future.
+        ## TODO!
+      ptab[1:frow, 1:fcol] <- NA  # mute the frequency part.
+      
+      ##
+        
+    ## (2) 
+
   
 }
 
