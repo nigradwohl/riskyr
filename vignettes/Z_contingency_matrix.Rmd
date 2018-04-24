@@ -354,8 +354,8 @@ ex_tab <- ex_tab[1:3, 1:3]  # frequencies only.
   ex_tab[1, 3] <- NA
   
   ## Version 4 (should not work):
-  # ex_tab[c(1, 1, 3, 3), c(1, 3, 1, 3)] <- NA
-  # ex_tab[2, 2] <- NA
+  ex_tab[c(1, 1, 3, 3), c(1, 3, 1, 3)] <- NA
+  ex_tab[2, 2] <- NA
   
 ## Testing with probabilities:
 exp_tab <- complete_tab
@@ -386,8 +386,7 @@ calc_tab <- function(table) {
     ## (1) Check for relevant rows and columns: -----
     ## Logical index for NA values: 
     log_na <- is.na(table)  # get matrix of NAs
-    
-    
+
     ## (a) Rows: -----
       ## Get indices of rows that can be calculated:
       row_ix <- which(rowSums(log_na) == 1)  # get rows with exactly one NA (can be calculated). 
@@ -458,25 +457,50 @@ calc_tab <- function(table) {
         }
         
         
+    ## XX: Return statement and stopping rules: --------
+      log_na <- is.na(table)  # get matrix of NAs after one run. 
+      
+      
+            
+      ## Recursive STOPPING rule 1:
+      if (!any(log_na)) {
+        return(table)  # return, when table is complete. 
+        
+      } else if(!any(rowSums(log_na) == 1 | colSums(log_na) == 1)) {  # if no single value in neither dimension. 
+        
+        stop("The information you specified is not sufficient to calculate the table.")
+        
+      } else {
+        
+        return(calc_tab(table))
+      }
+        
+        
+        
+        
         
         # TODO: Perform consistency checks or update NA-matrix in between steps?
         # TODO: Provide an informative error message upon insufficient inputs. 
     
-  ## (B) Include probabilities: ------
-    ## (1) Calculate all possible probabilities (see above?): ------
-      ## (a) Mute the frequency proportion: 
-      ptab <- table
-      
-      ## Set the dimensions of the frequency part:
-      frow <- 3
-      fcol <- 3
-        ## This may be done dynamically in the future.
-        ## TODO!
-      ptab[1:frow, 1:fcol] <- NA  # mute the frequency part.
-      
-      ##
-        
-    ## (2) 
+  # ## (B) Include probabilities: ------
+  #   ## (1) Calculate all possible probabilities (see above?): ------
+  #     ## (a) Mute the frequency proportion: 
+  #     ptab <- table
+  #     
+  #     ## Set the dimensions of the frequency part:
+  #     frow <- 3
+  #     fcol <- 3
+  #       ## This may be done dynamically in the future.
+  #       ## TODO!
+  #     ptab[1:frow, 1:fcol] <- NA  # mute the frequency part.
+  #     
+  #     ## Bayes rule: P(A|B) = (P(B|A) * P(A)) / P(B)
+  #       
+  #   ## (2) 
+  #     
+  # ## TODO: When to set N = 1 (or other arbitrary number)? 
+  #     
+  # ## (C) General consistency checks: 
 
   
 }
