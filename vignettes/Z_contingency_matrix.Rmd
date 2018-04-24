@@ -382,7 +382,8 @@ calc_tab <- function(table) {
   n_row <- nrow(table)
   n_col <- ncol(table)
   
-  ## (A) Frequency case: 
+  ## (A) Frequency case: -----
+  
     ## (1) Check for relevant rows and columns: -----
     ## Logical index for NA values: 
     log_na <- is.na(table)  # get matrix of NAs
@@ -460,16 +461,16 @@ calc_tab <- function(table) {
     ## XX: Return statement and stopping rules: --------
       log_na <- is.na(table)  # get matrix of NAs after one run. 
       
-      
-            
       ## Recursive STOPPING rule 1:
       if (!any(log_na)) {
         return(table)  # return, when table is complete. 
         
+      ## STOPPING RULE 2:
       } else if(!any(rowSums(log_na) == 1 | colSums(log_na) == 1)) {  # if no single value in neither dimension. 
         
         stop("The information you specified is not sufficient to calculate the table.")
-        
+      
+      ## CONTINUE:  
       } else {
         
         return(calc_tab(table))
@@ -477,30 +478,40 @@ calc_tab <- function(table) {
         
         
         
-        
-        
         # TODO: Perform consistency checks or update NA-matrix in between steps?
         # TODO: Provide an informative error message upon insufficient inputs. 
     
-  # ## (B) Include probabilities: ------
-  #   ## (1) Calculate all possible probabilities (see above?): ------
-  #     ## (a) Mute the frequency proportion: 
-  #     ptab <- table
-  #     
-  #     ## Set the dimensions of the frequency part:
-  #     frow <- 3
-  #     fcol <- 3
-  #       ## This may be done dynamically in the future.
-  #       ## TODO!
-  #     ptab[1:frow, 1:fcol] <- NA  # mute the frequency part.
-  #     
-  #     ## Bayes rule: P(A|B) = (P(B|A) * P(A)) / P(B)
-  #       
-  #   ## (2) 
-  #     
-  # ## TODO: When to set N = 1 (or other arbitrary number)? 
-  #     
-  # ## (C) General consistency checks: 
+  ## (B) Include probabilities: ------
+    ## (1) Calculate all possible probabilities (see above?): ------
+      ## (a) Mute the frequency proportion:
+      ptab <- table
+
+      ## Set the dimensions of the frequency part:
+      frow <- 3
+      fcol <- 3
+        ## This may be done dynamically in the future.
+        ## TODO!
+      ptab[1:frow, 1:fcol] <- NA  # mute the frequency part.
+
+      ## Bayes rule: P(A|B) = (P(B|A) * P(A)) / P(B)
+      
+      ## (b) Calculate all complements: ------
+      
+      ## Note: As long, as there are two conditional probabilities 
+      ## and the corresponding unconditional probability, all can be calculated in a 2x2 table.
+      ## However, this is redundant with the pathway over the frequencies:
+      ## - as soon, as any frequency is given--may be an arbitrary N--a row or column can be calculated;
+        ## This allows to calculate the col or row sums
+        ## From these one can calculate the cell frequencies via the corresponding conditional ps!
+
+    ## (2) Calculating frequencies from probabilities: ------
+      ## Note: as long as there is one probability and one frequency in any row or column it can be calculated.
+        
+
+  ## TODO: When to set N = 1 (or other arbitrary number)?
+
+  ## (C) General consistency checks:
+    ## TODO? Calculate the table in different ways and compare the results? 
 
   
 }
@@ -511,9 +522,11 @@ calc_tab <- function(table) {
 
 ```{r function_testing}
 ## (A) Frequency version:
-calc_tab(ex_tab)
+# calc_tab(ex_tab)
 ```
 
+
+Goal: Devise an "escalation-schedule": In which order should frequencies, probabilities, and their mixture be calculated? 
 
 ## OLDER MATERIALS
 
