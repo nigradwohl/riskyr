@@ -503,6 +503,11 @@ calc_tab <- function(table) {
       ## - as soon, as any frequency is given--may be an arbitrary N--a row or column can be calculated;
         ## This allows to calculate the col or row sums
         ## From these one can calculate the cell frequencies via the corresponding conditional ps!
+      
+      ## ANY frequency + appropriate probabilities will do!
+      ## This accounts for using the freequency + probability algorithm and the frequency algorithm. 
+      
+    ##+++HERE+++##
 
     ## (2) Calculating frequencies from probabilities: ------
       ## Note: as long as there is one probability and one frequency in any row or column it can be calculated.
