@@ -313,7 +313,7 @@ abline(h = 1:(plot_dim[2] - 1) + 0.5)
 
 ### Recursive solution 
 
-```{r}
+```{r example_table}
 ## Example table: 
 complete_freq <- rbind(c(17, 25),
                       c(28, 30)
@@ -340,8 +340,17 @@ ex_tab <- complete_tab
 ex_tab[2, ] <- NA
 ex_tab[, 2] <- NA
 
+# ex_tab[3, 2] <- NA
+# ex_tab[1, 3] <- NA
+
 
 ex_tab <- ex_tab[1:3, 1:3]  # frequencies only. 
+```
+
+
+```{r recursive_function}
+table <- ex_tab  
+table  # show table for checking reasons:
 
 ## Function for recursive generation: 
 calc_tab_rec <- function(table) {
@@ -358,19 +367,46 @@ calc_tab_rec <- function(table) {
     row_ix <- which(rowSums(log_na) == 1)  # get rows with exactly one NA (can be calculated). 
     col_ix <- which(colSums(log_na) == 1)
     
-    ## Rows: 
-      ## Sum up values except their sum in the last row: 
-      cell_sums_col <- colSums(table[-n_row, ], na.rm = TRUE)
+    ## (a) Rows: 
+      ## Sum up values in the indexed rows except their sum in the last column: 
+      cell_sums_row <- rowSums(table[row_ix, -n_col], na.rm = TRUE)
       
       ## Test, which operation to perform: 
+        ## Test for empty sum columns in the calculable rows:
+        no_rsum_col <- is.na(table[row_ix, 3])  # which of the rows is NA in the last column? 
+        
+        if (any(no_rsum_col)) {
+          ## Check, which last columns in the identified rows are NA:
+          cell_ix_row <- which(no_rsum_col)  
+          ## get index for the row(s) in which the last column is empty. 
+          table[row_ix, 3][is.na(table[row_ix, 3])] <- cell_sums_row[cell_ix_row]
+          ## Enter appropriate values. 
+        } 
+        
+        ## Test, if there is any row in which the empty cell is not a row sum:
+        if (any(!no_rsum_col)) {  
+          ## Check, which columns in the identified rows are NA:
+          cell_ix_row <- row_ix[!no_rsum_col]
+          row_NA <- table[cell_ix_row, ]  # get the rows with NAs not in last position. 
+          no_cell_col <- which(is.na(row_NA), arr.ind = TRUE)  # index for the cells without entries. 
+          
+          table[cell_ix_row, no_cell_col[, 2]] <- table[row_ix, n_col] - cell_sums_row[!no_rsum_col]
+          
+        }
+        
+      
+      
       if (n_row %in% col_ix) {  # test, whether the maximal row is included (row sum).
         
-        ## If TRUE, subtract the sum of the other values from the sum:
+        ## If TRUE, subtract the sum of the other values from their sum:
+        table[row_ix,][is.na(table[row_ix,])] <- table[row_ix, n_col] - cell_sums_row
         
       } else {
-        ## If FALSE (i.e., the sum is not included) simply add up: 
+        ## If FALSE (i.e., the sum is not included) simply put sum into respective cell:
+        table[row_ix, n_col] <- cell_sums_row
       }
-
+        
+        # TODO: Perform consistency checks or update NA-matrix in between steps?
     
   ## (B) Include probabilities
   
