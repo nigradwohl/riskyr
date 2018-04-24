@@ -295,6 +295,89 @@ abline(h = 1:(plot_dim[2] - 1) + 0.5)
 ```
 
 
+### Conditions:
+
+#### Necessary 
+
+* At least four inputs (N may be arbitrarily set)
+
+#### Sufficient 
+
+
+### JS Applet
+
+[http://jumbo.uni-muenster.de/fileadmin/jumbo/applets/vierf.html]
+
+[https://www.funky-bits.de/roc-curve-online-calculator-analysis-interactive-diagram/] 
+
+
+### Recursive solution 
+
+```{r}
+## Example table: 
+complete_freq <- rbind(c(17, 25),
+                      c(28, 30)
+                      )
+    ## Sums (frequency table):
+    complete_freq <- cbind(complete_freq, rowSums(complete_freq))
+    complete_freq <- rbind(complete_freq, colSums(complete_freq))
+
+    rel_freq <- complete_freq / complete_freq[dim(complete_freq)[1], dim(complete_freq)[2]]
+
+    ## Probs:
+      p_row <- t(apply(complete_freq, 1, function(X) X/X[3]))[,1:2]
+      p_col <- apply(complete_freq, 2, function(X) X/X[3])[1:2, ]
+
+    ## Complete table (freqs and probs):
+      complete_tab <- cbind(complete_freq, p_row)  # add the row probabilities.
+      complete_tab <- rbind(complete_tab, cbind(p_col, NA, NA))
+      complete_tab[4, 4] <- (complete_tab[1, 1] + complete_tab[2, 2]) / complete_tab[3, 3]
+      complete_tab
+
+ex_tab <- complete_tab
+
+## Remove some entries: 
+ex_tab[2, ] <- NA
+ex_tab[, 2] <- NA
+
+
+ex_tab <- ex_tab[1:3, 1:3]  # frequencies only. 
+
+## Function for recursive generation: 
+calc_tab_rec <- function(table) {
+  
+  ## Get dimensions:
+  n_row <- nrow(table)
+  n_col <- ncol(table)
+  
+  ## (A) Frequency case: 
+    ## (1) Check for relevant rows and columns:
+    ## Logical index for NA values: 
+    log_na <- is.na(ex_tab)  # get matrix of NAs
+    ## Get indices:
+    row_ix <- which(rowSums(log_na) == 1)  # get rows with exactly one NA (can be calculated). 
+    col_ix <- which(colSums(log_na) == 1)
+    
+    ## Rows: 
+      ## Sum up values except their sum in the last row: 
+      cell_sums_col <- colSums(table[-n_row, ], na.rm = TRUE)
+      
+      ## Test, which operation to perform: 
+      if (n_row %in% col_ix) {  # test, whether the maximal row is included (row sum).
+        
+        ## If TRUE, subtract the sum of the other values from the sum:
+        
+      } else {
+        ## If FALSE (i.e., the sum is not included) simply add up: 
+      }
+
+    
+  ## (B) Include probabilities
+  
+}
+```
+
+
 ## OLDER MATERIALS
 
 
