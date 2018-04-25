@@ -360,6 +360,7 @@ ex_tab <- ex_tab[1:3, 1:3]  # frequencies only.
 ## Testing with probabilities:
 exp_tab <- complete_tab
 exp_tab[1, c(2, 3)] <- NA
+exp_tab[c(2, 4), c(5, 2)] <- NA
 
   ## Note, one frequency and one probability are necessary and sufficient to calculate a row or column.
 ```
@@ -369,10 +370,7 @@ exp_tab[1, c(2, 3)] <- NA
 ## For frequency part:
 table <- ex_tab  
 
-## For part including probabilities: 
-table <- complete_tab
-
-
+table <- exp_tab
 table  # show table for checking reasons:
 
 ## Function for recursive generation: 
@@ -496,7 +494,48 @@ calc_tab <- function(table) {
       ## Bayes rule: P(A|B) = (P(B|A) * P(A)) / P(B)
       
       ## (b) Calculate all complements: ------
-      
+        
+        ## For rows:
+          col_pr <- ptab[1:frow, -(1:fcol)]  # get the probabilities in the last columns (row-probs). 
+          row_na <- which(rowSums(is.na(col_pr)) == 1)  # get rows with NA-values. 
+          rmat_na <- matrix(col_pr[row_na, ], ncol = ncol(col_pr))  # convert into matrix (to allow rowsums).
+          ## Complete column matrix: 
+          col_pr[row_na, is.na(col_pr[row_na, ])] <- 1 - rowSums(rmat_na, na.rm = TRUE)
+          
+          ## Check summing up to one:
+            comp_row <- rowSums(col_pr) == 1
+            
+            ## Warn (or provide error, if they do not):
+            if(any(!comp_row)) warning(paste0("Probabilities in row ", which(!comp_row), " do not sum up to 1."))
+          
+          ## Include into original table:
+            ptab[1:frow, -(1:fcol)] <- col_pr
+            
+        ## For columns:
+          row_pr <- ptab[-(1:frow), 1:fcol]  # get the probabilities in the last rows (col-probs). 
+          col_na <- which(colSums(is.na(row_pr)) == 1)  # get cols with NA-values. 
+          cmat_na <- matrix(row_pr[, col_na], nrow = nrow(row_pr))  # convert into matrix (to allow colsums).
+          ## Complete row-matrix:
+          row_pr[is.na(row_pr[, col_na]), col_na] <- 1 - colSums(cmat_na, na.rm = TRUE)
+          
+          ## Check summing up to one:
+            comp_col <- colSums(row_pr) == 1
+            
+            ## Warn (or provide error, if they do not):
+            if(any(!comp_col)) {
+              warning(paste0("Probabilities in row ", which(!comp_col), " do not sum up to 1.\n"))
+            }
+          
+          ## Include into original table:
+            ptab[-(1:frow), 1:fcol] <- row_pr
+            
+            
+      ## Reassemble tables: 
+        table[!is.na(ptab)] <- ptab[!is.na(ptab)]
+          
+        
+      ## TODO: Proper naming!!!
+            
       ## Note: As long, as there are two conditional probabilities 
       ## and the corresponding unconditional probability, all can be calculated in a 2x2 table.
       ## However, this is redundant with the pathway over the frequencies:
