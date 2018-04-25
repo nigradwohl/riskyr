@@ -376,19 +376,21 @@ table  # show table for checking reasons:
 ## Function for recursive generation: 
 calc_tab <- function(table) {
   
-  ## Get dimensions:
+  ## Get the dimensions:
   n_row <- nrow(table)
   n_col <- ncol(table)
   
-  ## (A) Frequency case: -----
+  ## TODO: Clarify, whether to include both in one function or have separate functions for freqs and probs.
   
-    ## (1) Check for relevant rows and columns: -----
-    ## Logical index for NA values: 
-    log_na <- is.na(table)  # get matrix of NAs
+  ## (A) Frequency part: -----
+  
+    ## (1) Check for rows and columns that can be calculated: -----
+    ## Logical index matrix for NA values: 
+    mf_na_log <- is.na(table)  # get matrix of NAs for the frequency case. 
 
     ## (a) Rows: -----
       ## Get indices of rows that can be calculated:
-      row_ix <- which(rowSums(log_na) == 1)  # get rows with exactly one NA (can be calculated). 
+      row_ix <- which(rowSums(mf_na_log) == 1)  # get rows with exactly one NA (can be calculated). 
       ## Note: Apparently, numeric indexing is faster. 
 
       ## Sum up values in the indexed rows except their sum in the last column: 
@@ -494,32 +496,48 @@ calc_tab <- function(table) {
       ## Bayes rule: P(A|B) = (P(B|A) * P(A)) / P(B)
       
       ## (b) Calculate all complements: ------
+      
+        ## Checking for completeness:
+        mp_r <- ptab[1:frow, -(1:fcol)]  # matrix of probabilities calculated from rows. 
+        mp_r_na_log <- is.na(mp_r)
+        mp_c <- ptab[-(1:frow), 1:fcol]  # matrix of probabiilities calculated from columns. 
+        mp_c_na_log <- is.na(mp_c) 
         
+        pr_inc <- any(mp_r_na_log)  # check rows.
+        pc_inc <- any(mp_c_na_log)  # check cols. 
+        
+        if (!any(c(pr_inc, pc_inc))) # TODO: this is a stopping condition for the probabilitiy case. 
+        
+          
         ## For rows:
-          col_pr <- ptab[1:frow, -(1:fcol)]  # get the probabilities in the last columns (row-probs). 
-          row_na <- which(rowSums(is.na(col_pr)) == 1)  # get rows with NA-values. 
-          rmat_na <- matrix(col_pr[row_na, ], ncol = ncol(col_pr))  # convert into matrix (to allow rowsums).
+        if(pr_inc) {  # if row elements are missing.
+          
+          row_na <- which(rowSums(mp_r_na_log) == 1)  # get rows with NA-values. 
+          rmat_na <- matrix(mp_r[row_na, ], ncol = ncol(mp_r))  # convert into matrix (to allow rowsums).
           ## Complete column matrix: 
-          col_pr[row_na, is.na(col_pr[row_na, ])] <- 1 - rowSums(rmat_na, na.rm = TRUE)
+          mp_r[row_na, mp_r_na_log[row_na, ]] <- 1 - rowSums(rmat_na, na.rm = TRUE)
           
           ## Check summing up to one:
-            comp_row <- rowSums(col_pr) == 1
+            rows_eq1 <- rowSums(col_pr) == 1
             
             ## Warn (or provide error, if they do not):
             if(any(!comp_row)) warning(paste0("Probabilities in row ", which(!comp_row), " do not sum up to 1."))
           
           ## Include into original table:
-            ptab[1:frow, -(1:fcol)] <- col_pr
-            
+            ptab[1:frow, -(1:fcol)] <- mp_r
+        }
+        
+        
         ## For columns:
-          row_pr <- ptab[-(1:frow), 1:fcol]  # get the probabilities in the last rows (col-probs). 
-          col_na <- which(colSums(is.na(row_pr)) == 1)  # get cols with NA-values. 
-          cmat_na <- matrix(row_pr[, col_na], nrow = nrow(row_pr))  # convert into matrix (to allow colsums).
+        if (pc_inc) {  # if column elements are missing. 
+          
+          col_na <- which(colSums(mp_c_na_log) == 1)  # get cols with NA-values. 
+          cmat_na <- matrix(mp_c[, col_na], nrow = nrow(mp_c))  # convert into matrix (to allow colsums).
           ## Complete row-matrix:
-          row_pr[is.na(row_pr[, col_na]), col_na] <- 1 - colSums(cmat_na, na.rm = TRUE)
+          mp_c[mp_c_na_log[, col_na], col_na] <- 1 - colSums(cmat_na, na.rm = TRUE)
           
           ## Check summing up to one:
-            comp_col <- colSums(row_pr) == 1
+            comp_col <- colSums(mp_c) == 1
             
             ## Warn (or provide error, if they do not):
             if(any(!comp_col)) {
@@ -527,9 +545,9 @@ calc_tab <- function(table) {
             }
           
           ## Include into original table:
-            ptab[-(1:frow), 1:fcol] <- row_pr
-            
-            
+            ptab[-(1:frow), 1:fcol] <- mp_c
+        }
+        
       ## Reassemble tables: 
         table[!is.na(ptab)] <- ptab[!is.na(ptab)]
           
@@ -550,7 +568,10 @@ calc_tab <- function(table) {
 
     ## (2) Calculating frequencies from probabilities: ------
       ## Note: as long as there is one probability and one frequency in any row or column it can be calculated.
-        
+      
+      ## Mapping:
+        ## Within each row or column the other dimension maps 1 -> 4, 2 -> 5 in a 2x2 table. 
+        ## More generally it maps according to cell_ix -> cell_ix + dim + 1  (dim - 1 + 2). 
 
   ## TODO: When to set N = 1 (or other arbitrary number)?
 
