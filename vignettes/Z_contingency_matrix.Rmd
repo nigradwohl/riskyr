@@ -365,6 +365,8 @@ ex_tab <- ex_tab[1:3, 1:3]  # frequencies only.
   ## Version 6: 
   ex_tab[1:3, 3] <- NA
   
+  ## Version 7: (should need the recursion!)
+  
 ## Testing with probabilities:
 exp_tab <- complete_tab
 exp_tab[1, c(2, 3)] <- NA
@@ -383,7 +385,7 @@ table <- ex_tab
 table <- exp_tab
 table  # show table for checking reasons:
 
-## Function for recursive generation: 
+## Function for recursive calculation: 
 calc_tab <- function(table) {
   
   ## Get the dimensions:
@@ -505,75 +507,74 @@ calc_tab <- function(table) {
         # TODO: Perform consistency checks or update NA-matrix in between steps?
         # TODO: Provide an informative error message upon insufficient inputs. 
     
-  # ## (B) Include probabilities: ------
-  #   ## (1) Calculate all possible probabilities (see above?): ------
-  #     ## (a) Mute the frequency proportion:
-  #     ptab <- table
-  # 
-  #     ## Set the dimensions of the frequency part:
-  #     frow <- 3
-  #     fcol <- 3
-  #       ## This may be done dynamically in the future.
-  #       ## TODO!
-  #     ptab[1:frow, 1:fcol] <- NA  # mute the frequency part.
-  # 
-  #     ## Bayes rule: P(A|B) = (P(B|A) * P(A)) / P(B)
-  #     
-  #     ## (a) Calculate all complements: ------
-  #     
-  #       ## Checking for completeness:
-  #       mp_r <- ptab[1:frow, -(1:fcol)]  # matrix of probabilities calculated from rows. 
-  #       mp_r_na_log <- is.na(mp_r)
-  #       mp_c <- ptab[-(1:frow), 1:fcol]  # matrix of probabiilities calculated from columns. 
-  #       mp_c_na_log <- is.na(mp_c) 
-  #       
-  #       pr_inc <- any(mp_r_na_log)  # check rows.
-  #       pc_inc <- any(mp_c_na_log)  # check cols. 
-  #       
-  #       if (!any(c(pr_inc, pc_inc))) # TODO: this is a stopping condition for the probabilitiy case. 
-  #       
-  #         
-  #       ## For rows:
-  #       if(pr_inc) {  # if row elements are missing.
-  #         
-  #         row_na <- which(rowSums(mp_r_na_log) == 1)  # get rows with NA-values. 
-  #         rmat_na <- matrix(mp_r[row_na, ], ncol = ncol(mp_r))  # convert into matrix (to allow rowsums).
-  #         ## Complete row matrix: 
-  #         mp_r[row_na, mp_r_na_log[row_na, ]] <- 1 - rowSums(rmat_na, na.rm = TRUE)
-  #         
-  #         ## Check summing up to one:
-  #           rows_eq1 <- rowSums(col_pr) == 1
-  #           
-  #           ## Warn (or provide error, if they do not):
-  #           if(any(!comp_row)) warning(paste0("Probabilities in row ", which(!comp_row), " do not sum up to 1."))
-  #         
-  #         ## Include into original table:
-  #           ptab[1:frow, -(1:fcol)] <- mp_r
-  #       }
-  #       
-  #       
-  #       ## For columns:
-  #       if (pc_inc) {  # if column elements are missing. 
-  #         
-  #         col_na <- which(colSums(mp_c_na_log) == 1)  # get cols with NA-values. 
-  #         cmat_na <- matrix(mp_c[, col_na], nrow = nrow(mp_c))  # convert into matrix (to allow colsums).
-  #         ## Complete column matrix:
-  #         mp_c[mp_c_na_log[, col_na], col_na] <- 1 - colSums(cmat_na, na.rm = TRUE)
-  #         
-  #         ## Check summing up to one:
-  #           comp_col <- colSums(mp_c) == 1
-  #           
-  #           ## Warn (or provide error, if they do not):
-  #           if(any(!comp_col)) {
-  #             warning(paste0("Probabilities in row ", which(!comp_col), " do not sum up to 1.\n"))
-  #           }
-  #         
-  #         ## Include into original table:
-  #           ptab[-(1:frow), 1:fcol] <- mp_c
-  #       }
-  #       
-  #     ## Reassemble tables: 
-  #       table[!is.na(ptab)] <- ptab[!is.na(ptab)]
+  ## (B) Include probabilities: ------
+    ## (1) Calculate all possible probabilities (see above?): ------
+      ## (a) Mute the frequency proportion:
+      ptab <- table
+
+      ## Set the dimensions of the frequency part:
+      frow <- 3
+      fcol <- 3
+        ## This may be done dynamically in the future.
+        ## TODO!
+      ptab[1:frow, 1:fcol] <- NA  # mute the frequency part.
+
+      ## Bayes rule: P(A|B) = (P(B|A) * P(A)) / P(B)
+
+      ## (a) Calculate all complements: ------
+
+        ## Checking for completeness:
+        mp_r <- ptab[1:frow, -(1:fcol)]  # matrix of probabilities calculated from rows.
+        mp_r_na_log <- is.na(mp_r)
+        mp_c <- ptab[-(1:frow), 1:fcol]  # matrix of probabiilities calculated from columns.
+        mp_c_na_log <- is.na(mp_c)
+
+        pr_inc <- any(mp_r_na_log)  # check rows.
+        pc_inc <- any(mp_c_na_log)  # check cols.
+
+        if (!any(c(pr_inc, pc_inc))) # TODO: this is a stopping condition for the probabilitiy case.
+
+        ## Calculate compelemets for rows: -----
+        if(pr_inc) {  # if row elements are missing.
+
+          row_na <- which(rowSums(mp_r_na_log) == 1)  # get rows with NA-values.
+          rmat_na <- matrix(mp_r[row_na, ], ncol = ncol(mp_r))  # convert into matrix (to allow rowsums).
+          ## Complete row matrix:
+          mp_r[row_na, mp_r_na_log[row_na, ]] <- 1 - rowSums(rmat_na, na.rm = TRUE)
+
+          ## Check summing up to one:
+            rows_eq1 <- rowSums(col_pr) == 1
+
+            ## Warn (or provide error, if they do not):
+            if(any(!comp_row)) warning(paste0("Probabilities in row ", which(!comp_row), " do not sum up to 1."))
+
+          ## Include into original table:
+            ptab[1:frow, -(1:fcol)] <- mp_r
+        }
+
+
+        ## Calculate compelemets for columns: ------
+        if (pc_inc) {  # if column elements are missing.
+
+          col_na <- which(colSums(mp_c_na_log) == 1)  # get cols with NA-values.
+          cmat_na <- matrix(mp_c[, col_na], nrow = nrow(mp_c))  # convert into matrix (to allow colsums).
+          ## Complete column matrix:
+          mp_c[mp_c_na_log[, col_na], col_na] <- 1 - colSums(cmat_na, na.rm = TRUE)
+
+          ## Check summing up to one:
+            comp_col <- colSums(mp_c) == 1
+
+            ## Warn (or provide error, if they do not):
+            if(any(!comp_col)) {
+              warning(paste0("Probabilities in column ", which(!comp_col), " do not sum up to 1.\n"))
+            }
+
+          ## Include into original table:
+            ptab[-(1:frow), 1:fcol] <- mp_c
+        }
+
+      ## Reassemble tables:
+        table[!is.na(ptab)] <- ptab[!is.na(ptab)]
           
         
       ## TODO: Proper naming!!!
