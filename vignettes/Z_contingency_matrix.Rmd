@@ -394,7 +394,7 @@ calc_tab <- function(table) {
   
   ## TODO: Clarify, whether to include both in one function or have separate functions for freqs and probs.
   
-  ## (A) Frequency part: -----
+  ## (A) Calculate frequencies from frequencies: -----
   
     ## (1) Check for rows and columns that can be calculated: -----
     ## Logical index matrix for NA values: 
@@ -449,6 +449,8 @@ calc_tab <- function(table) {
       ## Renew log_na:
       mf_na_log <- is.na(table)  # get matrix of NAs
         
+        ## TODO: Allow to stop hera as well? 
+        
       ## Get indices of columns that can be calculated:
       ccalc_ix <- which(colSums(mf_na_log) == 1)  # get columns with exactly one NA (can be calculated). 
     
@@ -493,7 +495,7 @@ calc_tab <- function(table) {
         ## if no single value in neither dimension. 
         
         stop("The information you specified is not sufficient to calculate the table.\n
-                    I need at least one more value."
+              I need at least one more value."
                     )
       
       ## CONTINUE:  
@@ -543,10 +545,10 @@ calc_tab <- function(table) {
           mp_r[row_na, mp_r_na_log[row_na, ]] <- 1 - rowSums(rmat_na, na.rm = TRUE)
 
           ## Check summing up to one:
-            rows_eq1 <- rowSums(col_pr) == 1
+            rows_eq1 <- rowSums(mp_r) == 1
 
             ## Warn (or provide error, if they do not):
-            if(any(!comp_row)) warning(paste0("Probabilities in row ", which(!comp_row), " do not sum up to 1."))
+            if(any(!rows_eq1)) warning(paste0("Probabilities in row ", which(!rows_eq1), " do not sum up to 1."))
 
           ## Include into original table:
             ptab[1:frow, -(1:fcol)] <- mp_r
@@ -562,11 +564,11 @@ calc_tab <- function(table) {
           mp_c[mp_c_na_log[, col_na], col_na] <- 1 - colSums(cmat_na, na.rm = TRUE)
 
           ## Check summing up to one:
-            comp_col <- colSums(mp_c) == 1
+            cols_eq1 <- colSums(mp_c) == 1
 
             ## Warn (or provide error, if they do not):
             if(any(!comp_col)) {
-              warning(paste0("Probabilities in column ", which(!comp_col), " do not sum up to 1.\n"))
+              warning(paste0("Probabilities in column ", which(!cols_eq1), " do not sum up to 1.\n"))
             }
 
           ## Include into original table:
@@ -588,7 +590,7 @@ calc_tab <- function(table) {
         ## From these one can calculate the cell frequencies via the corresponding conditional ps!
       
       ## ANY frequency + appropriate probabilities will do!
-      ## This accounts for using the freequency + probability algorithm and the frequency algorithm. 
+      ## This accounts for using the frequency + probability algorithm and the frequency algorithm. 
       
     ##+++HERE+++##
 
@@ -603,6 +605,10 @@ calc_tab <- function(table) {
 
   ## (C) General consistency checks:
     ## TODO? Calculate the table in different ways and compare the results? 
+        
+        ## Potential ways of checkign: 
+          ## - is_valid_prob_pair {riskyr} (passing tol!)
+          ## - is_prob
 
   
 }
