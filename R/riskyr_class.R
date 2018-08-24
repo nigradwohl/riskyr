@@ -24,9 +24,9 @@
 #' which can then be visualized by the \code{plot} method \code{\link{plot.riskyr}}
 #' and summarized by the \code{summary} method \code{\link{summary.riskyr}}.
 #' More specific applications are derived from this function.
-#' The base for this function is a 2 x 2 table of frequencies and probabilities.
+#' The base for this function is a 2 x 2 table of frequencies and corresponding probabilities.
 #'
-#' The table has to contain frequency and probabiltiy information in the prespecified format.
+#' The table has to contain frequency and probability information in the prespecified format.
 #' It can be accessed by specific functions the arguments of which target the tables cells.
 #' The \code{riskyr_tabular} function has the advantagge of being more flexible.
 #' However, most functions currently do not work on tables other than 2 x 2 frequencies.
