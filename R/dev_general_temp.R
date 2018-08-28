@@ -145,7 +145,7 @@
 
     ## Bayes rule: P(A|B) = (P(B|A) * P(A)) / P(B)
 
-    ## (a) Calculate all complements: ------
+  ## (a) Calculate all complements: ------
 
     ## Checking for completeness:
     mp_r <- ptab[1:frow, -(1:fcol)]  # matrix of probabilities calculated from rows.
@@ -194,6 +194,8 @@
       ## Include into original table:
       ptab[-(1:frow), 1:fcol] <- mp_c
     }
+
+  ## (b) Calculate probs from other probs if necessary: ------------------
 
 
 ## C. Mixed functions: ------------------------------
