@@ -196,6 +196,13 @@
     }
 
 
+## C. Mixed functions: ------------------------------
+
+  ## 1. Probs from frequencies:------------------------
+    p_row <- complete_freq[, c(1,2)] / complete_freq[, 3]
+    p_col <- complete_freq[c(1,2), ] / complete_freq[3, ]
+
+
 
 ## D. Full function: --------------------------------
 
