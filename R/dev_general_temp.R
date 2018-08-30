@@ -232,7 +232,24 @@
   ## (b) Calculate probs from other probs if necessary: ------------------
     ## Understand the calculations in matrix style:
 
+      p_tabs <- comp_pcomp(p_tabs)  # calculate complements first.
+
       ## Calculate PPV as example:
+        ## assume that sens and spec are in the rows.
+        ## if unconditional probabilites are missing, it doesn't work.
+
+        all(is.na(p_tabs$p_row[3, ]))  # are all entries in the last row (unconditional) NA?
+
+        ## Abbreviations for testing:
+        pr <- p_tabs$p_row
+        pc <- p_tabs$p_col
+
+        ## TODO: Can they be calculated?
+        ## Calculate ppod (row 3):
+          pr[1, 1] * pc[1, 3] / pc[1,1]  # does not work in this test case, as sens is missing.
+
+
+
         b <- t(t(p_tabs$p_col[, 1:2]) * p_tabs$p_row[3, ])
         b
 
@@ -273,6 +290,9 @@
   }
 
 
+
+  ## 2. Frequencies from probs:-------
+        ## TODO!
 ## D. Helper functions: --------------------------------
 
     ## 1. Function to combine two tables: ----------
@@ -410,24 +430,14 @@ calc_tab <- function(tab) {
         p_tabs$p_col <- comb_tabs(p_tabs$p_col, p_col)
 
 
-
-
-
     ## (C) Calculate probabilities from probabilities: -----
       ## (1) Calculate all possible probabilities (see above?): ------
-        ## (a) Mute the frequency proportion:
-        ptab <- tab
+        p_tabs <- comp_pcomp(p_tabs)
 
-        ## Set the dimensions of the frequency part:
-        frow <- 3
-        fcol <- 3
-        ## This may be done dynamically in the future.
-        ## TODO!
-        ptab[1:frow, 1:fcol] <- NA  # mute the frequency part.
+      ## (2) Calculate missing probabilities from Bayes' theorem: ------
+        ## TODO: HERE!
 
-    ## TODO: Proper naming!!!
-
-    ## (C) Mixed calculations? -------------------
+    ## (D) Mixed calculations? -------------------
         ## TODO: Even perform them (if necessary)?
     ## Note: As long, as there are two conditional probabilities
     ## and the corresponding unconditional probability, all can be calculated in a 2x2 table.
