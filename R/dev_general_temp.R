@@ -230,6 +230,9 @@
 
 
   ## (b) Calculate probs from other probs if necessary: ------------------
+
+    ## TODO: Check for summing up to 1 in advance!
+
     ## Understand the calculations in matrix style:
 
       p_tabs <- comp_pcomp(p_tabs)  # calculate complements first.
@@ -238,27 +241,58 @@
         ## assume that sens and spec are in the rows.
         ## if unconditional probabilites are missing, it doesn't work.
 
-        all(is.na(p_tabs$p_row[3, ]))  # are all entries in the last row (unconditional) NA?
-
         ## Abbreviations for testing:
         pr <- p_tabs$p_row
         pc <- p_tabs$p_col
 
         pr; pc
 
+        pr[1,] <- NA
 
-        ## General procedure:
-          a <- pc[1:2,1:2]  # denominator.
-          b <- pr[1:2,1:2]
-          b * pc[,3] / a  # 1 - prevalence.
+        ## General procedure for caclulating unconditional probabilities:
+
+        ## Test, which are missing:
+          ucr_na <- all(is.na(p_tabs$p_row[3, ]))  # are all entries in the last row (unconditional) NA?
+          ucc_na <- all(is.na(p_tabs$p_col[, 3]))  # are all entries in the last col (unconditional) NA?
+
+          if (ucc_na | ucr_na & !(ucc_na & ucr_na)) {  # only if some unconditional probabilities are missing.
+
+            ## Calculate sub-matrices:
+              a <- pc[1:2,1:2]
+              b <- pr[1:2,1:2]
+              ## Note, there may not be more than two rows/cols NA!
+
+            ## In case the row probs (typically prev) are NA
+              if (ucr_na) {
+                ucr <- b * pc[,3] / a  # unconditional row probabilities.
+                pr[3,] <- unique(ucr)[rowSums(!is.na(ucr)) > 0, ]
+              }
+
+            ## In case the col probs are NA (typically ppod):
+              if (ucc_na){
+                ucc <- a * pr[3, ] / b  # unconditional column probabilities;
+                pc[, 3] <- unique(ucc)[colSums(!is.na(ucr)) > 0, ]  # TODO!  Check colsums!
+                # this is the opposite operation (not working here).
+              }
+          }
+
+        ## Approach via relative frequency table:
+          relf_tab <- pr[1:2, ] * pc[, 3]  # relative frequencies from c_row & uc_col.
+
+          cpc <- t(t(relf_tab)/colSums(relf_tab))  # conditional probabilities column.
+
+          r_tb <- pc[, 1:2] * pr[3, ]  # relative frequencies from c_col & uc_row.
+
+          cpr <- "?"  # conditional probabilities row.
 
 
-        ## TODO: Can they be calculated?
+          ## Note, that in the relative frequency table the margin sums are the corresponding probabilities!
+
         ## Calculate ppod (row 3):
           pr[1, 1] * pc[1, 3] / pc[1,1]  # does not work in this test case, as sens is missing.
 
           ## Calculate sens:
-          d <- t(pr[1:2, ] * pc[, 3])  # just use a slightly different table!
+          d <-  "??"  # just use a slightly different table!
           d
           d == b
 
@@ -294,8 +328,15 @@
       ## Calculate 1 - prev from NPV * PN / spec:
         pr[2,2] * pc[2,3] / pc[2,2]
 
-      ## TODO!!! Important note: if one can claculate the relative frequency table, this is sufficient !!! ##
+      ## TODO!!! Important note: if one can calculate the relative frequency table, this is sufficient !!! ##
         ## TODO: But is it necessary?
+
+        ## TODO: Finish this!
+        ## Plan:
+          ## Calculate relftab first
+          ## If not possible, calculate unconditional probability
+          ## Calculate complements
+          ## retry relftab
 
 
 ## C. Mixed functions: ------------------------------
@@ -314,6 +355,45 @@
 
   ## 2. Frequencies from probs:-------
         ## TODO!
+
+        ## Is one frequency sufficient to calculate all others?
+        complete_tab[1,1]/(complete_tab[1,1]/97)  # yes, by this logic!
+        ## If the relative frequency table can be completely calculated, this is a piece of cake.
+
+        ## Knowing then N, one can multiply the relative frequencies to obtain the final table.
+
+        ## TODO: Function taking relative frequencies!
+
+        p_tabs
+
+        pr <- p_tabs$p_row
+        pc <- p_tabs$p_col
+
+        relf_tab <- pr[1:2, ] * pc[, 3]
+        relf_tab <- rbind(relf_tab, colSums(relf_tab))
+        relf_tab <- cbind(relf_tab, rowSums(relf_tab))
+        relf_tab
+
+        N <- as.integer(round(ftab / relf_tab))  # round, to obtain (hopefully) the correct numbers.
+        N <- unique(N[!is.na(N)])
+
+        if (length(N) > 1) warning("There is something off with the calculation of N!")
+
+        relf_tab * N  # this is correct, but not integer...
+
+        as.integer(relf_tab * N)  # changing to integers comes with some problems!
+
+        a <- round(relf_tab * N, 0)  # rounding seems to do the job (in this case)...
+        ## TODO: Monitor!
+
+        p_from_f(a)$p_row == p_tabs$p_row  # test calculating the probabilities from there.
+
+        ftab <- relf_tab * N  # calculate the frequency table.
+
+        is_freq(round(relf_tab * N, 0))
+
+        ## Then do some checking (rowsums, colsums...)
+
 ## D. Helper functions: --------------------------------
 
     ## 1. Function to combine two tables: ----------
@@ -365,7 +445,7 @@
     ## 0. Full table: ----------
 
         complete_freq <- rbind(c(17, 25),
-                               c(28, 30)
+                               c(28, 27)
         )
         ## Sums (frequency table):
         complete_freq <- cbind(complete_freq, rowSums(complete_freq))
@@ -407,6 +487,7 @@
         ix <- cbind(c(5, 5, 3), c(1, 2, 5))
         test_p2[ix] <- NA
 
+tab <- test_p2
 
 ## D. Full function: --------------------------------
 
