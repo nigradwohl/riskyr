@@ -1,51 +1,5 @@
 ## TEMPORARY FILE FOR DEVELOPING GENERALIZATION FUNCTIONS:
 
-## XX. Test cases: -------------------------------------
-
-  ## 0. Full table: -------------------------------
-
-    complete_freq <- rbind(c(17, 25),
-                           c(28, 30)
-    )
-    ## Sums (frequency table):
-    complete_freq <- cbind(complete_freq, rowSums(complete_freq))
-    complete_freq <- rbind(complete_freq, colSums(complete_freq))
-
-    rel_freq <- complete_freq / complete_freq[dim(complete_freq)[1], dim(complete_freq)[2]]
-
-    ## Probs:
-    p_row <- t(apply(complete_freq, 1, function(X) X/X[3]))[,1:2]
-    p_col <- apply(complete_freq, 2, function(X) X/X[3])[1:2, ]
-
-    ## Complete table (freqs and probs):
-    complete_tab <- cbind(complete_freq, p_row)  # add the row probabilities.
-    complete_tab <- rbind(complete_tab, cbind(p_col, NA, NA))
-    complete_tab[4, 4] <- (complete_tab[1, 1] + complete_tab[2, 2]) / complete_tab[3, 3]
-    complete_tab
-
-  ## 1. Completing frequencies is sufficient:  ----------------
-    test_freq <- complete_freq
-
-    test_freq[, 2] <- NA
-    test_freq[2, ] <- NA
-
-  ## 2. Frequencies cannot be completed: ----------------
-    test_fp <- complete_tab
-    ix <- cbind(c(1, 1, 2, 3, 3), c(1, 3, 2, 1, 3))
-    test_fp[ix] <- NA
-    test_fp[1:3, 1:3]  # frequency portion.
-    test_fp[4:5, 1:3]  # col probs.
-    test_fp[1:3, 4:5]  # row probs.
-
-  ## 3. Probabilities need complements: ------------------
-    test_p1 <- test_fp
-    test_p1[4, ] <- NA
-    test_p1[, 4] <- NA
-
-  ## 4. Frequencies cannot be calculated, probabilities need complements, and some are missing: ------
-    test_p2 <- test_p1
-    ix <- cbind(c(5, 5, 3), c(1, 2, 5))
-    test_p2[ix] <- NA
 
 ## A. Calculating frequencies: --------------------------
 
@@ -319,6 +273,98 @@
   }
 
 
+## D. Helper functions: --------------------------------
+
+    ## 1. Function to combine two tables: ----------
+        comb_tabs <- function(tab1, tab2) {
+
+          ## Check, whether both tables have same type and dimensions:
+          if(!isTRUE(all.equal(dim(tab1), dim(tab2)))) {
+            stop("Tables do not have the same dimensions.  Execution halted. ")
+          }
+
+
+          ## Way 1:
+          # ifelse(is.na(p_tabs$p_row),  # if an entry the first matrix is NA.
+          #        ifelse(is.na(p_row), NA, # and if the entry in the second matrix is NA there as well, code NA
+          #               p_row),  # else use the value from the second matrix.
+          #        ifelse(is.na(p_row), p_tabs$p_row,  # if the entry in the first matrix is not NA,
+          #               # but the second is, use the value of the frst matrix.
+          #               # otherwise compare the two values.
+          #               p_tabs$p_row
+          #        )
+
+          ## Way 2: Alternative strategy:
+          ## Get indices for NA-values:
+          ixna1 <- is.na(tab1)
+          ixna2 <- is.na(tab2)
+          ix12 <- (!ixna1 & ixna2) | (ixna1 & !ixna2)  # statement for "either NA in 1 or NA in 2".
+
+          ## Test tables for equality where none is NA:
+          tab_eq <- (tab1 == tab2)[!(ixna1 | ixna2)]
+          # get whether tables are equal everywhere they are not NA.
+          ## If any value is false, they do not match (sufficiently)
+
+          if(!all(tab_eq)){warning("Provided inputs do not match within tolerance.")}
+
+          ## Set NA values to -1; adding two NAs will produce -2 (to be set NA);
+          ## all non-NA values will remain above and +1 can be added.
+          ref_tab <- tab1  # set final matrix to reference matrix.
+
+          tab1[ix12 & ixna1] <- 0  # set NAs where b is fine to 0.
+          tab2[ix12 & ixna2] <- 0
+          ref_tab[ix12] <- tab1[ix12] + tab2[ix12]
+
+          return(ref_tab)
+        }
+
+
+## XX. Test cases: -------------------------------------
+
+    ## 0. Full table: ----------
+
+        complete_freq <- rbind(c(17, 25),
+                               c(28, 30)
+        )
+        ## Sums (frequency table):
+        complete_freq <- cbind(complete_freq, rowSums(complete_freq))
+        complete_freq <- rbind(complete_freq, colSums(complete_freq))
+
+        rel_freq <- complete_freq / complete_freq[dim(complete_freq)[1], dim(complete_freq)[2]]
+
+        ## Probs:
+        p_row <- t(apply(complete_freq, 1, function(X) X/X[3]))[,1:2]
+        p_col <- apply(complete_freq, 2, function(X) X/X[3])[1:2, ]
+
+        ## Complete table (freqs and probs):
+        complete_tab <- cbind(complete_freq, p_row)  # add the row probabilities.
+        complete_tab <- rbind(complete_tab, cbind(p_col, NA, NA))
+        complete_tab[4, 4] <- (complete_tab[1, 1] + complete_tab[2, 2]) / complete_tab[3, 3]
+        complete_tab
+
+    ## 1. Completing frequencies is sufficient:  ----------------
+        test_freq <- complete_freq
+
+        test_freq[, 2] <- NA
+        test_freq[2, ] <- NA
+
+    ## 2. Frequencies cannot be completed: ----------------
+        test_fp <- complete_tab
+        ix <- cbind(c(1, 1, 2, 3, 3), c(1, 3, 2, 1, 3))
+        test_fp[ix] <- NA
+        test_fp[1:3, 1:3]  # frequency portion.
+        test_fp[4:5, 1:3]  # col probs.
+        test_fp[1:3, 4:5]  # row probs.
+
+    ## 3. Probabilities need complements: ------------------
+        test_p1 <- test_fp
+        test_p1[4, ] <- NA
+        test_p1[, 4] <- NA
+
+    ## 4. Frequencies cannot be calculated, probabilities need complements, and some are missing: ------
+        test_p2 <- test_p1
+        ix <- cbind(c(5, 5, 3), c(1, 2, 5))
+        test_p2[ix] <- NA
 
 
 ## D. Full function: --------------------------------
@@ -351,47 +397,21 @@ calc_tab <- function(tab) {
 
     ## (B) Calculate probabilities from frequencies: -------
 
-      ## Do this, if the frequency table is complete: ---
-      ## TODO: Or do it anyway?
-      if (!any(is.na(ftab))) {
-        p_tabs <- p_from_f(ftab)  # calculate probability table from frequencies.
-      }
+      ## Calculate probability table from frequencies.
+      ## TODO: Check first, whwether necessary?
+        p_tabs <- p_from_f(ftab)
 
-      ## Assemble with original table:
-      p_row <- tab[1:3, 4:5]  # get row table.
-      p_col <- tab[4:5, 1:3]
+      ## Assemble with probability table provided by the user:
+        p_row <- tab[1:3, 4:5]  # get row probability table.
+        p_col <- tab[4:5, 1:3]  # get column probabiilty table.
 
-      which(!is.na(p_tabs$p_row), arr.ind = TRUE)
+      ## Combine the matrices:
+        p_tabs$p_row <- comb_tabs(p_tabs$p_row, p_row)  # reference table needs to be in the first place.
+        p_tabs$p_col <- comb_tabs(p_tabs$p_col, p_col)
 
-      all.equal(p_tabs$p_row, p_row)
 
-      ## Add the matrices:
-      ## TODO: Exclude the equal value!
-      ifelse(is.na(p_tabs$p_row),  # if an entry the first matrix is NA.
-             ifelse(is.na(p_row), NA, # if the entry in the matrix is NA there as well, code NA
-                    p_row),  # else use the value from the matrix.
-             ifelse(is.na(p_row), p_tabs$p_row,  # if the entry in the first matrix is not NA,
-                                                # but the second is, use it.
-                    p_tabs$p_row + p_row))  # otherwise add the two values.
 
-      ifelse(is.na(p_tabs$p_row),  # if an entry the first matrix is NA.
-             ifelse(is.na(p_row), NA, # if the entry in the matrix is NA there as well, code NA
-                    p_row),  # else use the value from the matrix.
-             ifelse(is.na(p_row), p_tabs$p_row,  # if the entry in the first matrix is not NA,
-                    # but the second is, use it.
-                    # otherwise compare the two values.
-                    ifelse(p_tabs$p_row == p_row, p_tabs$p_row,
-                           # if they are equal use the first (from frequencies).
-                           warning("Tables do not match")))
-             )
 
-      ## Check for any zeros:
-        which(is.na(p_row)
-              )
-
-      ix <- which(p_tabs$p_row != p_row, arr.ind = TRUE)
-
-      p_tabs$p_row[ix] + p_row[ix]
 
     ## (C) Calculate probabilities from probabilities: -----
       ## (1) Calculate all possible probabilities (see above?): ------
