@@ -244,13 +244,38 @@
         pr <- p_tabs$p_row
         pc <- p_tabs$p_col
 
+        pr; pc
+
+
+        ## General procedure:
+          a <- pc[1:2,1:2]  # denominator.
+          b <- pr[1:2,1:2]
+          b * pc[,3] / a  # 1 - prevalence.
+
+
         ## TODO: Can they be calculated?
         ## Calculate ppod (row 3):
           pr[1, 1] * pc[1, 3] / pc[1,1]  # does not work in this test case, as sens is missing.
 
+          ## Calculate sens:
+          d <- t(pr[1:2, ] * pc[, 3])  # just use a slightly different table!
+          d
+          d == b
+
+          sns <- d[1, 1] / (d[1, 1] + d[1, 2])  ## sens.
+          fnr <- d[1, 2] / (d[1, 1] + d[1, 2])  ## 1 - sens.
+
+          d[2, 1] / (d[2, 1] + d[2, 2])  ## 1- spec.
+          d[2, 2] / (d[2, 1] + d[2, 2])  ## spec.
+
+          pc[,1] <- c(sns, fnr)  # enter sens and fnr into table.
+
+          pr[1, 1] * pc[1, 3] / pc[1,1]  # calculate prev.
 
 
-        b <- t(t(p_tabs$p_col[, 1:2]) * p_tabs$p_row[3, ])
+
+      ## Calculate PPV / NPV:
+        b <- t(t(pc[, 1:2]) * pr[3, ])
         b
 
         b[1, 1] / (b[1, 1] + b[1, 2])  ## PPV.
@@ -259,23 +284,19 @@
         b[2, 1] / (b[2, 1] + b[2, 2])  ## 1- NPV.
         b[2, 2] / (b[2, 1] + b[2, 2])  ## NPV.
 
-      ## Repeat for sens:
-        d <- t(p_tabs$p_row[1:2, ] * p_tabs$p_col[, 3])  # just use a slightly different table!
-        d
-        d == b
-
-        d[1, 1] / (d[1, 1] + d[1, 2])  ## sens.
-        d[1, 2] / (d[1, 1] + d[1, 2])  ## 1 - sens.
-
-        d[2, 1] / (d[2, 1] + d[2, 2])  ## 1- spec.
-        d[2, 2] / (d[2, 1] + d[2, 2])  ## spec.
-
         ## Note that you can typically only calculate one of both!
 
       ## Calculate prevalence:
         p_tabs
         p_tabs$p_row[1,1] * p_tabs$p_col[1, 3] / (p_tabs$p_col[1,1])  # prevalence!
         d[1, 1] / p_tabs$p_col[1,1]  # TP/N / sens.
+
+      ## Calculate 1 - prev from NPV * PN / spec:
+        pr[2,2] * pc[2,3] / pc[2,2]
+
+      ## TODO!!! Important note: if one can claculate the relative frequency table, this is sufficient !!! ##
+        ## TODO: But is it necessary?
+
 
 ## C. Mixed functions: ------------------------------
 
