@@ -1,8 +1,55 @@
 ## TEMPORARY FILE FOR DEVELOPING GENERALIZATION FUNCTIONS:
 
+## XX. Test cases: -------------------------------------
+
+  ## 0. Full table: -------------------------------
+
+    complete_freq <- rbind(c(17, 25),
+                           c(28, 30)
+    )
+    ## Sums (frequency table):
+    complete_freq <- cbind(complete_freq, rowSums(complete_freq))
+    complete_freq <- rbind(complete_freq, colSums(complete_freq))
+
+    rel_freq <- complete_freq / complete_freq[dim(complete_freq)[1], dim(complete_freq)[2]]
+
+    ## Probs:
+    p_row <- t(apply(complete_freq, 1, function(X) X/X[3]))[,1:2]
+    p_col <- apply(complete_freq, 2, function(X) X/X[3])[1:2, ]
+
+    ## Complete table (freqs and probs):
+    complete_tab <- cbind(complete_freq, p_row)  # add the row probabilities.
+    complete_tab <- rbind(complete_tab, cbind(p_col, NA, NA))
+    complete_tab[4, 4] <- (complete_tab[1, 1] + complete_tab[2, 2]) / complete_tab[3, 3]
+    complete_tab
+
+  ## 1. Completing frequencies is sufficient:  ----------------
+    test_freq <- complete_freq
+
+    test_freq[, 2] <- NA
+    test_freq[2, ] <- NA
+
+  ## 2. Frequencies cannot be completed: ----------------
+    test_fp <- complete_tab
+    ix <- cbind(c(1, 1, 2, 3, 3), c(1, 3, 2, 1, 3))
+    test_fp[ix] <- NA
+    test_fp[1:3, 1:3]  # frequency portion.
+    test_fp[4:5, 1:3]  # col probs.
+    test_fp[1:3, 4:5]  # row probs.
+
+  ## 3. Probabilities need complements: ------------------
+    test_p1 <- test_fp
+    test_p1[4, ] <- NA
+    test_p1[, 4] <- NA
+
+  ## 4. Frequencies cannot be calculated, probabilities need complements, and some are missing: ------
+    test_p2 <- test_p1
+    ix <- cbind(c(5, 5, 3), c(1, 2, 5))
+    test_p2[ix] <- NA
+
 ## A. Calculating frequencies: --------------------------
 
-## Function to calculate rows: --------------------------
+## 1. Function to calculate rows: --------------------------
   crow <- function(ftab) {
     ## Get indices of NA rows:
     rcalc_ix <- which(is.na(ftab), arr.ind = TRUE)
@@ -68,40 +115,40 @@
   comp_ftab <- function(ftab) {
 
     ## Get the dimensions:
-    n_rowf <- nrow(ftab)
-    n_colf <- ncol(ftab)
+      n_rowf <- nrow(ftab)
+      n_colf <- ncol(ftab)
 
-    ## (1) Check for rows and columns that can be calculated: -----
-    ## Logical index matrix for NA values:
-    mf_na_log <- is.na(ftab)  # get matrix of NAs for the frequency case.
+      ## (1) Check for rows and columns that can be calculated: -----
+      ## Logical index matrix for NA values:
+      mf_na_log <- is.na(ftab)  # get matrix of NAs for the frequency case.
 
-    ## Stopping point 1:
-    if (!any(mf_na_log)) {
-      return(ftab)  # return, when table is complete.
-    }
+      ## Stopping point 1:
+      if (!any(mf_na_log)) {
+        return(ftab)  # return, when table is complete.
+      }
 
 
     ## (a) Rows: -----
-    if(any(rowSums(mf_na_log) == 1)) {
+      if(any(rowSums(mf_na_log) == 1)) {
 
-      ## If any row can be calculated:
-      ftab <- crow(ftab)  # calculate the rows.
-    }
+        ## If any row can be calculated:
+        ftab <- crow(ftab)  # calculate the rows.
+      }
 
 
     ## (b) Columns: -----
 
-    ## Renew log_na:
-    mf_na_log <- is.na(ftab)  # get matrix of NAs
+      ## Renew log_na:
+      mf_na_log <- is.na(ftab)  # get matrix of NAs
 
-    ## Stopping point 2:
-    if (!any(mf_na_log)) {
-      return(ftab)  # return, when table is complete.
-    }
+      ## Stopping point 2:
+      if (!any(mf_na_log)) {
+        return(ftab)  # return, when table is complete.
+      }
 
-    if(any(colSums(mf_na_log) == 1)) {
-      ftab <- ccol(ftab)  # calculate the columns.
-    }
+      if(any(colSums(mf_na_log) == 1)) {
+        ftab <- ccol(ftab)  # calculate the columns.
+      }
 
 
 
@@ -116,8 +163,9 @@
     } else if(!any(rowSums(mf_na_log) == 1 | colSums(mf_na_log) == 1)) {
       ## if no single value in neither dimension.
 
-      stop("The information you specified is not sufficient to calculate the full table.\nI need at least one more value."
-      )
+      # stop("The information you specified is not sufficient to calculate the full table.\nI need at least one more value."      )
+      ## Do not throw the error in this case!
+      return(ftab)  # return the incomplete table!
 
       ## CONTINUE if not complete:
     } else {
@@ -128,6 +176,9 @@
   }
 
 ## B. Probability table: ------------------------------
+
+  ## 1. If the frequency table is complete, calculate probabilities:
+
 
   ## Set tolereance:
   tol <- 0.001
@@ -146,63 +197,127 @@
     ## Bayes rule: P(A|B) = (P(B|A) * P(A)) / P(B)
 
   ## (a) Calculate all complements: ------
+  comp_pcomp <- function(p_tabs, tol = 0.001) {
 
-    ## Checking for completeness:
-    mp_r <- ptab[1:frow, -(1:fcol)]  # matrix of probabilities calculated from rows.
-    mp_r_na_log <- is.na(mp_r)
-    mp_c <- ptab[-(1:frow), 1:fcol]  # matrix of probabiilities calculated from columns.
-    mp_c_na_log <- is.na(mp_c)
+    ## Checking for completeness: -------
+    ## Version with table input:
+      mp_r <- ptab[1:frow, -(1:fcol)]  # matrix of probabilities calculated from rows.
+      mp_r_na_log <- is.na(mp_r)
+      mp_c <- ptab[-(1:frow), 1:fcol]  # matrix of probabiilities calculated from columns.
+      mp_c_na_log <- is.na(mp_c)
 
-    pr_inc <- any(mp_r_na_log)  # check rows.
-    pc_inc <- any(mp_c_na_log)  # check cols.
 
-    if (!any(c(pr_inc, pc_inc))) # TODO: this is a stopping condition for the probabilitiy case.
 
-    ## Calculate compelemets for rows: -----
+    # if (!any(c(pr_inc, pc_inc))) # TODO: this is a stopping condition for the probabilitiy case.
+
+    ## Version with list input:
+      mp_r <- p_tabs$p_row
+      mp_r_na_log <- is.na(mp_r)
+      mp_c <- p_tabs$p_col
+      mp_c_na_log <- is.na(mp_c)
+
+      pr_inc <- any(mp_r_na_log)  # check rows.
+      pc_inc <- any(mp_c_na_log)  # check cols.
+
+    ## i. Calculate complemets for rows: -----
       if(pr_inc) {  # if row elements are missing.
 
         row_na <- which(mp_r_na_log, arr.ind = TRUE)  # get rows with NA-values.
+        row_na <- rbind(
+          row_na[!(duplicated(row_na[,1]) | duplicated(row_na[,1], fromLast = TRUE)), ]
+          )  # remove duplicates.
         ## Complete row matrix:
         mp_r[row_na] <- 1 - rowSums(rbind(mp_r[row_na[, 1], ]), na.rm = TRUE)
 
         ## Check summing up to one:
-        rows_eq1 <- isTRUE(all.equal(rowSums(mp_r), rep(1, nrow(mp_r)), tolerance = tol))
+        rows_eq1 <- isTRUE(all.equal(
+          rowSums(rbind(mp_r[row_na[,1], ])),
+          rep(1, nrow(row_na)),
+          tolerance = tol))
 
         ## Warn (or provide error, if they do not):
         if(any(!rows_eq1)) warning(paste0("Probabilities in row ", which(!rows_eq1), " do not sum up to 1."))
 
         ## Include into original table:
-        ptab[1:frow, -(1:fcol)] <- mp_r
+        p_tabs$p_row <- mp_r
       }
 
 
-    ## Calculate compelemets for columns: ------
-    if (pc_inc) {  # if column elements are missing.
+    ## ii. Calculate complemets for columns: ------
+      if (pc_inc) {  # if column elements are missing.
 
-      col_na <- which(mp_c_na_log, arr.ind = TRUE)  # get cols with NA-values.
-      ## Complete column matrix:
-      mp_c[col_na] <- 1 - colSums(cbind(mp_c[, col_na[, 2]]), na.rm = TRUE)
+        col_na <- which(mp_c_na_log, arr.ind = TRUE)  # get cols with NA-values.
+        col_na <- rbind(
+          col_na[!(duplicated(col_na[,2]) | duplicated(col_na[,2], fromLast = TRUE)), ]
+          ) # remove duplicates.
+        ## Complete column matrix:
+        mp_c[col_na] <- 1 - colSums(cbind(mp_c[, col_na[, 2]]), na.rm = TRUE)
 
-      ## Check summing up to one:
-      cols_eq1 <- colSums(mp_c) == 1
+        ## Check summing up to one:
+        cols_eq1 <- isTRUE(all.equal(
+          colSums(cbind(mp_c[, col_na[,2]])),
+          rep(1, nrow(col_na)),
+          tolerance = tol))
 
-      ## Warn (or provide error, if they do not):
-      if(any(!comp_col)) {
-        warning(paste0("Probabilities in column ", which(!cols_eq1), " do not sum up to 1.\n"))
+        ## Warn (or provide error, if they do not):
+        if(any(!cols_eq1)) {
+          warning(paste0("Probabilities in column ", which(!cols_eq1), " do not sum up to 1.\n"))
+        }
+
+        ## Include into original table:
+        p_tabs$p_col <- mp_c
       }
 
-      ## Include into original table:
-      ptab[-(1:frow), 1:fcol] <- mp_c
-    }
+    return(p_tabs)
+  }
+
+  comp_pcomp(test_p2)  # use an example.
+
+
 
   ## (b) Calculate probs from other probs if necessary: ------------------
+    ## Understand the calculations in matrix style:
 
+      ## Calculate PPV as example:
+        b <- t(t(p_tabs$p_col[, 1:2]) * p_tabs$p_row[3, ])
+        b
+
+        b[1, 1] / (b[1, 1] + b[1, 2])  ## PPV.
+        b[1, 2] / (b[1, 1] + b[1, 2])  ## 1 - PPV.
+
+        b[2, 1] / (b[2, 1] + b[2, 2])  ## 1- NPV.
+        b[2, 2] / (b[2, 1] + b[2, 2])  ## NPV.
+
+      ## Repeat for sens:
+        d <- t(p_tabs$p_row[1:2, ] * p_tabs$p_col[, 3])  # just use a slightly different table!
+        d
+        d == b
+
+        d[1, 1] / (d[1, 1] + d[1, 2])  ## sens.
+        d[1, 2] / (d[1, 1] + d[1, 2])  ## 1 - sens.
+
+        d[2, 1] / (d[2, 1] + d[2, 2])  ## 1- spec.
+        d[2, 2] / (d[2, 1] + d[2, 2])  ## spec.
+
+        ## Note that you can typically only calculate one of both!
+
+      ## Calculate prevalence:
+        p_tabs
+        p_tabs$p_row[1,1] * p_tabs$p_col[1, 3] / (p_tabs$p_col[1,1])  # prevalence!
+        d[1, 1] / p_tabs$p_col[1,1]  # TP/N / sens.
 
 ## C. Mixed functions: ------------------------------
 
   ## 1. Probs from frequencies:------------------------
-    p_row <- complete_freq[, c(1,2)] / complete_freq[, 3]
-    p_col <- complete_freq[c(1,2), ] / complete_freq[3, ]
+
+  p_from_f <- function(ftab) {
+    p_row <- ftab[1:3, c(1,2)] / ftab[1:3, 3]
+    p_col <- t(t(ftab[c(1,2), 1:3]) / ftab[3, 1:3])
+    p_dia <- sum(diag(ftab)[1:2]) / diag(ftab)[3]  # add the accuracy metric.
+
+    return(list(p_row = p_row, p_col = p_col, p_dia = p_dia))
+  }
+
 
 
 
@@ -227,14 +342,58 @@ calc_tab <- function(tab) {
 
     ## (A) Calculate frequencies from frequencies: -----
 
-    ftab <- tab[1:3, 1:3]  # get the frequency proportion.
-    ## Get the dimensions:
-    n_rowf <- nrow(ftab)
-    n_colf <- ncol(ftab)
+      ftab <- tab[1:3, 1:3]  # get the frequency proportion.
+      ## Get the dimensions:
+      n_rowf <- nrow(ftab)
+      n_colf <- ncol(ftab)
 
-    ftab <- comp_ftab(ftab)  # calculate the frequency table.
+      ftab <- comp_ftab(ftab)  # calculate the frequency table.
 
-    ## (B) Calculate probabilities from probabilities: -----
+    ## (B) Calculate probabilities from frequencies: -------
+
+      ## Do this, if the frequency table is complete: ---
+      ## TODO: Or do it anyway?
+      if (!any(is.na(ftab))) {
+        p_tabs <- p_from_f(ftab)  # calculate probability table from frequencies.
+      }
+
+      ## Assemble with original table:
+      p_row <- tab[1:3, 4:5]  # get row table.
+      p_col <- tab[4:5, 1:3]
+
+      which(!is.na(p_tabs$p_row), arr.ind = TRUE)
+
+      all.equal(p_tabs$p_row, p_row)
+
+      ## Add the matrices:
+      ## TODO: Exclude the equal value!
+      ifelse(is.na(p_tabs$p_row),  # if an entry the first matrix is NA.
+             ifelse(is.na(p_row), NA, # if the entry in the matrix is NA there as well, code NA
+                    p_row),  # else use the value from the matrix.
+             ifelse(is.na(p_row), p_tabs$p_row,  # if the entry in the first matrix is not NA,
+                                                # but the second is, use it.
+                    p_tabs$p_row + p_row))  # otherwise add the two values.
+
+      ifelse(is.na(p_tabs$p_row),  # if an entry the first matrix is NA.
+             ifelse(is.na(p_row), NA, # if the entry in the matrix is NA there as well, code NA
+                    p_row),  # else use the value from the matrix.
+             ifelse(is.na(p_row), p_tabs$p_row,  # if the entry in the first matrix is not NA,
+                    # but the second is, use it.
+                    # otherwise compare the two values.
+                    ifelse(p_tabs$p_row == p_row, p_tabs$p_row,
+                           # if they are equal use the first (from frequencies).
+                           warning("Tables do not match")))
+             )
+
+      ## Check for any zeros:
+        which(is.na(p_row)
+              )
+
+      ix <- which(p_tabs$p_row != p_row, arr.ind = TRUE)
+
+      p_tabs$p_row[ix] + p_row[ix]
+
+    ## (C) Calculate probabilities from probabilities: -----
       ## (1) Calculate all possible probabilities (see above?): ------
         ## (a) Mute the frequency proportion:
         ptab <- tab
@@ -280,6 +439,9 @@ calc_tab <- function(tab) {
       ## Potential ways of checkign:
       ## - is_valid_prob_pair {riskyr} (passing tol!)
       ## - is_prob
+
+      ## TODO: Compare non-NA values of input and corresponding output values.
+        ## Give precedence to table from frequencies!
 
     ## (E) Finishing the table:
 
