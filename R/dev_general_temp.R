@@ -151,81 +151,45 @@
     ## Bayes rule: P(A|B) = (P(B|A) * P(A)) / P(B)
 
   ## (a) Calculate all complements: ------
-  comp_pcomp <- function(p_tabs, tol = 0.001) {
+  compr_pcomp <- function(p_tab, transpose = FALSE, tol = 0.001) {
 
     ## Checking for completeness: -------
-    ## Version with table input:
-      mp_r <- ptab[1:frow, -(1:fcol)]  # matrix of probabilities calculated from rows.
-      mp_r_na_log <- is.na(mp_r)
-      mp_c <- ptab[-(1:frow), 1:fcol]  # matrix of probabiilities calculated from columns.
-      mp_c_na_log <- is.na(mp_c)
 
+    if (transpose) p_tab <- t(p_tab)  # shouuld the table be transposed?
 
+    ## One probability table as input:
+      mp_na_log <- is.na(p_tab)  # get NA values.
+      p_inc <- any(mp_na_log)  # check for any missings.
 
-    # if (!any(c(pr_inc, pc_inc))) # TODO: this is a stopping condition for the probabilitiy case.
+    ## Calculate complemets for rows: -----
+      if(p_inc) {  # if row elements are missing.
 
-    ## Version with list input:
-      mp_r <- p_tabs$p_row
-      mp_r_na_log <- is.na(mp_r)
-      mp_c <- p_tabs$p_col
-      mp_c_na_log <- is.na(mp_c)
-
-      pr_inc <- any(mp_r_na_log)  # check rows.
-      pc_inc <- any(mp_c_na_log)  # check cols.
-
-    ## i. Calculate complemets for rows: -----
-      if(pr_inc) {  # if row elements are missing.
-
-        row_na <- which(mp_r_na_log, arr.ind = TRUE)  # get rows with NA-values.
+        row_na <- which(mp_na_log, arr.ind = TRUE)  # get rows with NA-values.
         row_na <- rbind(
           row_na[!(duplicated(row_na[,1]) | duplicated(row_na[,1], fromLast = TRUE)), ]
-          )  # remove duplicates.
+          )  # remove duplicated rows (which can't be calculated).
+
         ## Complete row matrix:
-        mp_r[row_na] <- 1 - rowSums(rbind(mp_r[row_na[, 1], ]), na.rm = TRUE)
+        p_tab[row_na] <- 1 - rowSums(rbind(p_tab[row_na[, 1], ]), na.rm = TRUE)
 
         ## Check summing up to one:
         rows_eq1 <- isTRUE(all.equal(
-          rowSums(rbind(mp_r[row_na[,1], ])),
+          rowSums(rbind(p_tab[row_na[,1], ])),
           rep(1, nrow(row_na)),
           tolerance = tol))
 
         ## Warn (or provide error, if they do not):
         if(any(!rows_eq1)) warning(paste0("Probabilities in row ", which(!rows_eq1), " do not sum up to 1."))
-
-        ## Include into original table:
-        p_tabs$p_row <- mp_r
       }
 
+    # retranspose table if it has been transposed:
+      if(transpose) p_tab <- t(p_tab)
 
-    ## ii. Calculate complemets for columns: ------
-      if (pc_inc) {  # if column elements are missing.
-
-        col_na <- which(mp_c_na_log, arr.ind = TRUE)  # get cols with NA-values.
-        col_na <- rbind(
-          col_na[!(duplicated(col_na[,2]) | duplicated(col_na[,2], fromLast = TRUE)), ]
-          ) # remove duplicates.
-        ## Complete column matrix:
-        mp_c[col_na] <- 1 - colSums(cbind(mp_c[, col_na[, 2]]), na.rm = TRUE)
-
-        ## Check summing up to one:
-        cols_eq1 <- isTRUE(all.equal(
-          colSums(cbind(mp_c[, col_na[,2]])),
-          rep(1, nrow(col_na)),
-          tolerance = tol))
-
-        ## Warn (or provide error, if they do not):
-        if(any(!cols_eq1)) {
-          warning(paste0("Probabilities in column ", which(!cols_eq1), " do not sum up to 1.\n"))
-        }
-
-        ## Include into original table:
-        p_tabs$p_col <- mp_c
-      }
-
-    return(p_tabs)
+    return(p_tab)
   }
 
-  comp_pcomp(test_p2)  # use an example.
+
+  compr_pcomp(test_p2)  # use an example.
 
 
 
@@ -249,34 +213,34 @@
 
         pr[1,] <- NA
 
-        ## General procedure for caclulating unconditional probabilities:
+        ## 1. General procedure for caclulating unconditional probabilities:
 
-        ## Test, which are missing:
-          ucr_na <- all(is.na(p_tabs$p_row[3, ]))  # are all entries in the last row (unconditional) NA?
-          ucc_na <- all(is.na(p_tabs$p_col[, 3]))  # are all entries in the last col (unconditional) NA?
+          ## Test, which are missing:
+            ucr_na <- all(is.na(p_tabs$p_row[3, ]))  # are all entries in the last row (unconditional) NA?
+            ucc_na <- all(is.na(p_tabs$p_col[, 3]))  # are all entries in the last col (unconditional) NA?
 
-          if (ucc_na | ucr_na & !(ucc_na & ucr_na)) {  # only if some unconditional probabilities are missing.
+            if (ucc_na | ucr_na & !(ucc_na & ucr_na)) {  # only if some unconditional probabilities are missing.
 
-            ## Calculate sub-matrices:
-              a <- pc[1:2,1:2]
-              b <- pr[1:2,1:2]
-              ## Note, there may not be more than two rows/cols NA!
+              ## Calculate sub-matrices:
+                a <- pc[1:2,1:2]
+                b <- pr[1:2,1:2]
+                ## Note, there may not be more than two rows/cols NA!
 
-            ## In case the row probs (typically prev) are NA
-              if (ucr_na) {
-                ucr <- b * pc[,3] / a  # unconditional row probabilities.
-                pr[3,] <- unique(ucr)[rowSums(!is.na(ucr)) > 0, ]
-              }
+              ## In case the row probs (typically prev) are NA
+                if (ucr_na) {
+                  ucr <- b * pc[,3] / a  # unconditional row probabilities.
+                  pr[3,] <- unique(ucr)[rowSums(!is.na(ucr)) > 0, ]
+                }
 
-            ## In case the col probs are NA (typically ppod):
-              if (ucc_na){
-                ucc <- a * pr[3, ] / b  # unconditional column probabilities;
-                pc[, 3] <- unique(ucc)[colSums(!is.na(ucr)) > 0, ]  # TODO!  Check colsums!
-                # this is the opposite operation (not working here).
-              }
-          }
+              ## In case the col probs are NA (typically ppod):
+                if (ucc_na){
+                  ucc <- a * pr[3, ] / b  # unconditional column probabilities;
+                  pc[, 3] <- unique(ucc)[colSums(!is.na(ucr)) > 0, ]  # TODO!  Check colsums!
+                  # this is the opposite operation (not working here).
+                }
+            }
 
-        ## Approach via relative frequency table:
+        ## 2. Approach via relative frequency table:
           relf_tab <- pr[1:2, ] * pc[, 3]  # relative frequencies from c_row & uc_col.
 
           cpc <- t(t(relf_tab)/colSums(relf_tab))  # conditional probabilities column.
@@ -338,6 +302,39 @@
           ## Calculate complements
           ## retry relftab
 
+        ## Rules for being able to calculate a given probability:
+          ## 1. 3 probabilities: 2 conditional and 1 converse unconditional probability are provided:
+              rw <- matrix(c("a", "b", NA, "1 - a", "1 - b", NA), ncol = 2)
+              cl <- matrix(c(NA, NA, "c", NA, NA, "1 - c"), nrow = 2, byrow = TRUE)
+              rw; cl
+              rw <- !is.na(rw); cl <- !is.na(cl)
+              rw; t(cl)  # this pattern works.
+              ## --> transposing one and combining them provides a complete 2 x 3 table.
+
+          ## 2. 4 probabilities: Transposing one table either:
+              ## a) Same pattern in both matrices; exactly one NA:
+                rw <- cbind(c(T, F, T), c(F, F, F))
+                cl <- rbind(c(T, F, T), c(F, F, F))
+                rw; cl
+                ## OR:
+                rw <- cbind(c(F, F, F), c(F, T, T))
+                cl <- rbind(c(F, F, F), c(F, T, T))
+                rw; cl
+                rw == t(cl)
+
+              ## b)
+                rw <- cbind(c(F, F, F), c(T, F, T))
+                cl <- rbind(c(F, T, T), c(F, F, F))
+                rw; cl
+                ## OR:
+                t(rw); t(cl)
+
+
+    ## Note: ----
+        ## Testing complements:
+        all.equal(p_tabs$p_row[, 1], 1 - p_tabs$p_row[, 2])  # pretty economic!
+
+
 
 ## C. Mixed functions: ------------------------------
 
@@ -353,8 +350,10 @@
 
 
 
-  ## 2. Frequencies from probs:-------
+
         ## TODO!
+  ## 2. Frequencies from probs:-------
+
 
         ## Is one frequency sufficient to calculate all others?
         complete_tab[1,1]/(complete_tab[1,1]/97)  # yes, by this logic!
@@ -393,6 +392,7 @@
         is_freq(round(relf_tab * N, 0))
 
         ## Then do some checking (rowsums, colsums...)
+
 
 ## D. Helper functions: --------------------------------
 
@@ -520,7 +520,7 @@ calc_tab <- function(tab) {
     ## (B) Calculate probabilities from frequencies: -------
 
       ## Calculate probability table from frequencies.
-      ## TODO: Check first, whwether necessary?
+      ## TODO: Check first, whether necessary?
         p_tabs <- p_from_f(ftab)
 
       ## Assemble with probability table provided by the user:
@@ -533,8 +533,10 @@ calc_tab <- function(tab) {
 
 
     ## (C) Calculate probabilities from probabilities: -----
-      ## (1) Calculate all possible probabilities (see above?): ------
-        p_tabs <- comp_pcomp(p_tabs)
+      ## (1) Calculate all possible probability complements (see above?): ------
+        p_tabs$p_row <- compr_pcomp(p_tabs$p_row)
+        p_tabs$p_col <- compr_pcomp(p_tabs$p_col, transpose = TRUE)
+          ## transpose to use row function for columns.
 
       ## (2) Calculate missing probabilities from Bayes' theorem: ------
         ## TODO: HERE!
