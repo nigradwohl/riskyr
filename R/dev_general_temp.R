@@ -250,14 +250,16 @@
 
            c1 <- !all(is.na(rowSums(ptb1)))  # not all rows in ptb1 may be NA.
 
-           c2 <- sum(is.na(rowSums(ptb2))) < 2  # less than 2 (1) may be NA.
+           c2 <- sum(is.na(rowSums(ptb2))) < 2  & !any(is.na(ptb2[3, ]))
+           ## less than 2 (1) may be NA, one needs to be an unconditional probability (in row 3).
+
 
          if(!(c1 & c2)) {
 
            ## Warn, if not turned off:
-           if(warn) warning("These probability tables do not allow for calculation")
+           if(warn) warning("These probability tables do not allow for any calculation")
 
-           return(FALSE)  # return FALSE (to be passed on to other functions).
+           return(list(rftab = FALSE))   # return FALSE (to be passed on to other functions).
 
 
          } else {
@@ -559,10 +561,13 @@ calc_tab <- function(tab) {
 
       ## Combine the matrices:
         ## TODO: Which is more relevant frequency or probabiility input (currently: frequencies)
+        ## resolve the potential conflict in some way!
 
         p_row <- comb_tabs(p_tabs$p_row, p_row_us)  # reference table needs to be in the first place.
         p_col <- comb_tabs(p_tabs$p_col, p_col_us)
 
+        ## TODO: Check for inconsistencies beyond issuing a warning message!
+          ## Also include a note on what is done now (currently, frequencies are used)!
         ## TODO: Check for consistency of complements?
 
     ## (C) Calculate probabilities from probabilities: -----
@@ -574,6 +579,8 @@ calc_tab <- function(tab) {
 
       ## (2) Calculate missing probabilities from Bayes' theorem: ------
         relf <- comp_ptab(p_row, p_col)  # calculate relf in one way ...
+
+        ## TODO: Change in function what is returned to allow failure!
 
         if(all(!relf$rftab)) {
           relf <- comp_ptab(t(p_col), p_row)
@@ -608,7 +615,7 @@ calc_tab <- function(tab) {
             prec <- 5
             N <- 10^0  # set N.
             rftb <- round(relf$rftab, prec) * N
-            while(!all(rftb > 0 & all.equal(rftb %% 1, 0))) {
+            while(!all(rftb > 0 & isTRUE(all.equal(rftb %% 1, 0)))) {
               N <- N * 10
               rftb <- rftb * N
             }
@@ -632,9 +639,18 @@ calc_tab <- function(tab) {
 
           if(!all(ftab_eq[!is.na(ftab_eq)])) {
             warning("Frequencies calculated from probabilities do not match provided frequencies. ")
+
+            ## TODO: Problem occurs here!
+              ## If frequency inputs do not match probability inputs this results in infinite recursion on ftab!
+              ## In case tst_smp one may adjust hits, N, or the probabilities.
+              ## Maybe one may simply throw an error...
+
+
           } else {
             ftab <- ftab2
           }
+
+
 
 
 
@@ -675,10 +691,60 @@ calc_tab <- function(tab) {
 
 }
 
-## The calculations are pretty fast!
+
+        calc_tab(test_p2)
+
+        test_p22 <- test_p2
+        test_p22[1, ] <- NA  # remove first line.
+
+        system.time({calc_tab(test_p22)})  # still works.
+
+        test_p22[5, 3] <- 0.3  # changing 1- prev.
+        calc_tab(test_p22)  # does not work propoerly anymore for 0.7 (smaller values are okay).
+          ## Problem: values depend on each other, but only one is changed (update function?)
+          ## Some givens still seem to change...
+
+        ## Simplified world:
+        tst_smp <- test_p3  # use a minimal set.
+        calc_tab(tst_smp)
+        tst_smp[4, 3] <- 0.01  # here everything works fine, as no dependent inputs were specified.
+        calc_tab(tst_smp)
+        tst_smp[4, 1]  <- 0.7  # increase PPV.
+        calc_tab(tst_smp)  # still works, ignoring the probability information.
+        tst_smp[1, 1]  <- 30
+        calc_tab(tst_smp)  # including another frequency the program crashes.
+
+        ## TODO: Test probabilities and frequencies in advance!
+
+        test_p23 <- test_p2
+        test_p23[, 3] <- NA
+        calc_tab(test_p23)  # this doesn't work; more informative error message?
+
+        test_p23[3, 3] <- 32
+        calc_tab(test_p23)  # nte: N of 32 is stupid and should lead to a warning
+         ## (as not in line with other frequencies)
+
+        test_p23[3, 3] <- 100
+        calc_tab(test_p23)  # problem: if I change the N, the rest does not follow suit!
+        ## The inputs become inconsistent (maybe beyond repair?)
+
+
+        ## The calculations are pretty fast!
         system.time(
           replicate(100, calc_tab(test_p1))
         )
+
+## TODO:
+        ## Check the function thoroughly! Where may be problems?
+        ## Include stopping condition; is recursiveness in the wrapper even warranted?
+        ## What about inconsistent input (non-matching probabilities)?
+        ## What to hold constant, if something is changed (frequencies, NPV, sens ...)?
+
+
+## E. Default tables and translation
+
+      ## TODO: How to interface named methods with the table calculation?
+        ## Directly or via general function?
 
 
 ## F. Conceptual stuff: --------------------
