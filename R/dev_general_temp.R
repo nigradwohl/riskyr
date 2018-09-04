@@ -369,68 +369,72 @@
             ptb2 <- t(pc)  # a$p_row
             ptb1; ptb2
 
-     comp_ptab <- function(ptb1, ptb2) {
+    comp_ptab <- function(ptb1, ptb2, warn = FALSE) {
 
-       transp <- FALSE  # set marker for whether the table has been transposed.
+       ## A. Checking:
 
-       if(!all(dim(ptb1 == dim(ptb2)))) {
-         ptb2 <- t(ptb2)  # transpose, if necessary.
-         transp <- TRUE
+         ## 1. Bring matrices into same form:
+           transp <- FALSE  # set marker for whether the table has been transposed.
 
-         if(!all(dim(ptb1 == dim(ptb2)))) stop("Input tables need to have the same dimensions. ")
+           if(!all(dim(ptb1) == dim(ptb2))) {
+             ptb2 <- t(ptb2)  # transpose, if necessary.
+             transp <- TRUE
+
+             if(!all(dim(ptb1 == dim(ptb2)))) stop("Input tables need to have the same dimensions. ")
+           }
+
+         ## 2. Test prerequisite for possible calculation:
+
+           c1 <- !all(is.na(rowSums(ptb1)))  # not all rows in ptb1 may be NA.
+
+           c2 <- sum(is.na(rowSums(ptb2))) < 2  # less than 2 (1) may be NA.
+
+       if(!(c1 & c2)) {
+
+         ## Warn, if not turned off:
+         if(warn) warning("These probability tables do not allow for calculation")
+
+         return(FALSE)  # return FALSE (to be passed on to other functions).
+
+
+       } else {
+
+         ## B. Calculate table:
+           ## 1. Try to calculate relf_tab:
+           relf_tab <- ptb1[1:2, ] * ptb2[3, ]
+
+           ## TODO: Return relf_tab here if complete?
+
+           if(!any(is.na(relf_tab))) return(relf_tab)  # stopping condition 1?
+
+         ## 2. Try to calculate any other probability:
+           # tb1r1 <- tb2[1:2, 1] * tb1[3, ] / tb2[3, 1]  # tb1 row 1.
+           # tb1r2 <- tb2[1:2, 2] * tb1[3, ] / tb2[3, 2]  # tb1 row 2.
+
+           ptb1r12 <- t(ptb2[1:2, 1:2] * ptb1[3, ]) / ptb2[3, 1:2]  # alternative for both rows?
+           ptb1r3 <- diag(ptb1[1:2, 1:2] * ptb2[3, 1:2] / ptb2[1:2, 1:2])  # tb1 row 3.
+
+           ## Bind the CPs and UCPs:
+           ptb1_temp <- rbind(ptb1r12, ptb1r3, deparse.level = 0)   # set deparse.level to avoid naming.
+
+           ptb1 <- comb_tabs(ptb1, ptb1_temp)  # combine new information with old information.
+
+           if(any(rowSums(is.na(ptb1)) == 1)) {  # if any row is incomplete:
+             ptb1 <- compr_pcomp(ptb1)  # complete the table with complement (if necessary).
+           }
+
+           ## Go into new recursive loop:
+            return(comp_ptab(ptb1, ptb2))
        }
-
-       ## 1. Try to calculate relf_tab:
-          relf_tab <- ptb1[1:2, ] * ptb2[3, ]
-
-       ## 2. Try to calculate any other probability:
-          # tb1r1 <- tb2[1:2, 1] * tb1[3, ] / tb2[3, 1]  # tb1 row 1.
-          # tb1r2 <- tb2[1:2, 2] * tb1[3, ] / tb2[3, 2]  # tb1 row 2.
-
-          ptb1r12 <- t(ptb2[1:2, 1:2] * ptb1[3, ]) / ptb2[3, 1:2]  # alternative for both rows?
-          ptb1r3 <- diag(ptb1[1:2, 1:2] * ptb2[3, 1:2] / ptb2[1:2, 1:2])  # tb1 row 3.
-
-          ## Bind the CPs and UCPs:
-          ptb1_temp <- rbind(ptb1r12, ptb1r3, deparse.level = 0)   # set deparse.level to avoid naming.
-
-          ptb1 <- comb_tabs(ptb1, ptb1_temp)  # combine new information with old information.
-
-          ## TODO: Condition:
-          ptb1 <- compr_pcomp(ptb1)  # complete the table with complement (if necessary).
 
      }
 
-        ## Rules for being able to calculate a given probability:
-          ## 1. 3 probabilities: 2 conditional and 1 converse unconditional probability are provided
-            ## (then one can also calculate the relative frequency table):
-              rw <- matrix(c("a", "b", NA, "1 - a", "1 - b", NA), ncol = 2)
-              cl <- matrix(c(NA, NA, "c", NA, NA, "1 - c"), nrow = 2, byrow = TRUE)
-              rw; cl
-              rw <- !is.na(rw); cl <- !is.na(cl)
-              rw; t(cl)  # this pattern works.
-              ## --> transposing one and combining them provides a complete 2 x 3 table.
+    ## Test the function:
+     comp_ptab(pr, t(pc))  # get a relative frequency table.
+        ## TODO: Is that sufficient?
+     comp_ptab(t(pc), pr)  # this does (correctly) not work, as pc cannot be calculated.
 
-          ## 2. 4 probabilities: Transposing one table either:
-              ## a) Same pattern in both matrices; exactly one NA:
-                rw <- cbind(c(T, F, T), c(F, F, F))
-                cl <- rbind(c(T, F, T), c(F, F, F))
-                rw; cl
-                ## OR:
-                rw <- cbind(c(F, F, F), c(F, T, T))
-                cl <- rbind(c(F, F, F), c(F, T, T))
-                rw; cl
-                rw == t(cl)
 
-              ## b)
-                rw <- cbind(c(F, F, F), c(T, F, T))
-                cl <- rbind(c(F, T, T), c(F, F, F))
-                rw; cl
-                ## OR:
-                t(rw); t(cl)
-                ## Given that one is transposed:
-                rw; t(cl)
-                ## OR:
-                t(rw); cl
 
 
     ## Note: ----
@@ -525,18 +529,16 @@
           ix12 <- (!ixna1 & ixna2) | (ixna1 & !ixna2)  # statement for "either NA in 1 or NA in 2".
 
           ## Test tables for equality where none is NA:
-          tab_eq <- (tab1 == tab2)[!(ixna1 | ixna2)]
-          # get whether tables are equal everywhere they are not NA.
-          ## If any value is false, they do not match (sufficiently)
+          tab_eq <- isTRUE(all.equal(tab1[!(ixna1 | ixna2)], tab2[!(ixna1 | ixna2)]))
+            ## get whether tables are equal everywhere they are not NA.
+            ## If any value is false, they do not match (sufficiently)
 
           if(!all(tab_eq)){warning("Provided inputs do not match within tolerance.")}
 
-          ## Set NA values to -1; adding two NAs will produce -2 (to be set NA);
-          ## all non-NA values will remain above and +1 can be added.
           ref_tab <- tab1  # set final matrix to reference matrix.
 
-          tab1[ix12 & ixna1] <- 0  # set NAs where b is fine to 0.
-          tab2[ix12 & ixna2] <- 0
+          tab1[ix12 & ixna1] <- 0  # set NAs where only tab1 is NA to 0.
+          tab2[ix12 & ixna2] <- 0  # set NAs where only tab2 is NA to 0.
           ref_tab[ix12] <- tab1[ix12] + tab2[ix12]
 
           return(ref_tab)
@@ -686,3 +688,42 @@ calc_tab <- function(tab) {
         tab[!is.na(ptab)] <- ptab[!is.na(ptab)]
 
 }
+
+
+
+## F. Conceptual stuff: --------------------
+    ## 1. Thoughts on the calculation of probabilities: =====
+
+
+      ## a. Patterns: -----
+        ## Rules for being able to calculate a given probability: -----
+        ## 1. 3 probabilities: 2 conditional and 1 converse unconditional probability are provided
+        ## (then one can also calculate the relative frequency table):
+        rw <- matrix(c("a", "b", NA, "1 - a", "1 - b", NA), ncol = 2)
+        cl <- matrix(c(NA, NA, "c", NA, NA, "1 - c"), nrow = 2, byrow = TRUE)
+        rw; cl
+        rw <- !is.na(rw); cl <- !is.na(cl)
+        rw; t(cl)  # this pattern works.
+        ## --> transposing one and combining them provides a complete 2 x 3 table.
+
+        ## 2. 4 probabilities: Transposing one table either:
+        ## a) Same pattern in both matrices; exactly one NA:
+        rw <- cbind(c(T, F, T), c(F, F, F))
+        cl <- rbind(c(T, F, T), c(F, F, F))
+        rw; cl
+        ## OR:
+        rw <- cbind(c(F, F, F), c(F, T, T))
+        cl <- rbind(c(F, F, F), c(F, T, T))
+        rw; cl
+        rw == t(cl)
+
+        ## b)
+        rw <- cbind(c(F, F, F), c(T, F, T))
+        cl <- rbind(c(F, T, T), c(F, F, F))
+        rw; cl
+        ## OR:
+        t(rw); t(cl)
+        ## Given that one is transposed:
+        rw; t(cl)
+        ## OR:
+        t(rw); cl
