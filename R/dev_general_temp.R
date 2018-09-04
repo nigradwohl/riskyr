@@ -191,7 +191,7 @@
     }
 
 
-  compr_pcomp(test_p2)  # use an example.
+  # compr_pcomp(test_p2)  # use an example.
 
 
 
@@ -242,7 +242,7 @@
             pr <- compr_pcomp(pr)
 
         ## 2. Approach via relative frequency table:
-          relf_tab <- pr[1:2, ] * pc[, 3]  # relative frequencies from c_row & uc_col.
+          relf_tab <- pr[1:2, ] * t(pc)[3, ]  # relative frequencies from c_row & uc_col.
 
           rlf_tb <- t(t(pc)[1:2, ] * t(pr)[, 3])
 
@@ -353,6 +353,52 @@
           ## If not possible, calculate unconditional probability
           ## Calculate complements
           ## retry relftab
+
+  ## Function to calculate probabilities: ---------
+
+    ## Testing stuff:
+            pr <- p_tabs$p_row
+            pc <- p_tabs$p_col
+
+            pr; pc
+
+            pr[1,] <- NA
+
+            ## Redefine as table 1 and 2 which then can be exchanged:
+            ptb1 <- pr  # t(a$p_col)
+            ptb2 <- t(pc)  # a$p_row
+            ptb1; ptb2
+
+     comp_ptab <- function(ptb1, ptb2) {
+
+       transp <- FALSE  # set marker for whether the table has been transposed.
+
+       if(!all(dim(ptb1 == dim(ptb2)))) {
+         ptb2 <- t(ptb2)  # transpose, if necessary.
+         transp <- TRUE
+
+         if(!all(dim(ptb1 == dim(ptb2)))) stop("Input tables need to have the same dimensions. ")
+       }
+
+       ## 1. Try to calculate relf_tab:
+          relf_tab <- ptb1[1:2, ] * ptb2[3, ]
+
+       ## 2. Try to calculate any other probability:
+          # tb1r1 <- tb2[1:2, 1] * tb1[3, ] / tb2[3, 1]  # tb1 row 1.
+          # tb1r2 <- tb2[1:2, 2] * tb1[3, ] / tb2[3, 2]  # tb1 row 2.
+
+          ptb1r12 <- t(ptb2[1:2, 1:2] * ptb1[3, ]) / ptb2[3, 1:2]  # alternative for both rows?
+          ptb1r3 <- diag(ptb1[1:2, 1:2] * ptb2[3, 1:2] / ptb2[1:2, 1:2])  # tb1 row 3.
+
+          ## Bind the CPs and UCPs:
+          ptb1_temp <- rbind(ptb1r12, ptb1r3, deparse.level = 0)   # set deparse.level to avoid naming.
+
+          ptb1 <- comb_tabs(ptb1, ptb1_temp)  # combine new information with old information.
+
+          ## TODO: Condition:
+          ptb1 <- compr_pcomp(ptb1)  # complete the table with complement (if necessary).
+
+     }
 
         ## Rules for being able to calculate a given probability:
           ## 1. 3 probabilities: 2 conditional and 1 converse unconditional probability are provided
