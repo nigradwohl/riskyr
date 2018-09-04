@@ -197,7 +197,8 @@
 
   ## (b) Calculate probs from other probs if necessary: ------------------
 
-      p_tabs <- comp_pcomp(p_tabs)  # calculate complements first.
+      p_tabs$p_row <- compr_pcomp(p_tabs$p_row)  # calculate complements first.
+      p_tabs$p_col <- compr_pcomp(p_tabs$p_col, transpose = TRUE)
 
       ## Calculate PPV as example:
         ## assume that sens and spec are in the rows.
@@ -249,8 +250,58 @@
 
           comb_tabs(relf_tab, rlf_tb)
 
+
           ## The example with pr[1,] <- NA amounts to a case b) (see below).
             pr; pc
+
+            ## Redefine as table 1 and 2 which then can be exchanged:
+              tb1 <- t(pc)  # t(a$p_col)
+              tb2 <- pr  # a$p_row
+              tb1; tb2
+
+            which(is.na(tb1), arr.ind = TRUE)  # test only relevant indices?
+
+            ## Prerequisites:
+                ## 1 UCP and 2 CPs (either both in other table or 1 in same other in other)
+                ## To be able to calculate anything from a given (transposed) table: max 1 row NA.
+
+            ## Calculate conditional probabilities: -----
+              ## CP1 = CP2 * UCP2 / UCP1:
+                tb1[1, 1] = tb2[1, 1] * tb1[3, 1] / tb2[3, 1]  ## OR:
+                tb1[1, 2] = tb2[2, 1] * tb1[3, 2] / tb2[3, 1]
+
+                ## tb1 and tb2 can simply be exchanged to calculate the respective other probability.
+
+                tb1[2, 1] = tb2[1, 2] * tb1[3, 1] / tb2[3, 2]
+                tb1[2, 2] = tb2[2, 2] * tb1[3, 2] / tb2[3, 2]
+
+            ## Calculate UCPs: -----
+              ## UCP1 = CP1 * UCP2 / CP2:
+                tb1[3, 1] = tb1[1, 1] * tb2[3, 1] / tb2[1, 1]
+                tb1[3, 1] = tb1[2, 1] * tb2[3, 2] / tb2[1, 2]
+
+                tb1[3, 2] = tb1[1, 2] * tb2[3, 1] / tb2[2, 1]
+                tb1[3, 2] = tb1[2, 2] * tb2[3, 2] / tb2[2, 2]
+
+            ## In matrix calculations this now amounts to:
+                tb2[1:2, 1] * tb1[3, ] / tb2[3, 1]  # tb1 row 1.
+                tb2[1:2, 2] * tb1[3, ] / tb2[3, 2]  # tb1 row 2.
+
+                tb1[1:2, 1] * tb2[3, 1:2] / tb2[1, 1:2]  # tb1 row 3, col 1.
+                tb1[1:2, 2] * tb2[3, 1:2] / tb2[2, 1:2]  # tb1 row 3, col 2.
+
+                ## These are 4 instead of 8 equations.
+
+                diag(tb1[1:2, 1:2] * tb2[3, 1:2] / tb2[1:2, 1:2])  # tb1 row 3.
+
+                ## One more equation may be saved.
+
+                ## Final result:
+                  tb2[1:2, 1] * tb1[3, ] / tb2[3, 1]  # tb1 row 1.
+                  tb2[1:2, 2] * tb1[3, ] / tb2[3, 2]  # tb1 row 2.
+                  diag(tb1[1:2, 1:2] * tb2[3, 1:2] / tb2[1:2, 1:2])  # tb1 row 3.
+
+
             tpc <- t(pc)  # create a transposed version.
             pr; tpc
 
