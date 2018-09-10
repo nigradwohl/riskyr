@@ -541,7 +541,7 @@ calc_tab <- function(tab) {
       } else {
 
         ftab <- ftab_us  # othewise create an NA-table.
-        anyf <- FALSE
+        anyf <- FALSE  # flag for not having provided any frequencies.
       }
 
       ## Note: Even without any frequencies a decent table may be provided by calculating an N!
@@ -553,15 +553,16 @@ calc_tab <- function(tab) {
 
       ## (1) Calculate probability table from frequencies.
       ## TODO: Check first, whether necessary or possible?
-        p_tabs <- p_from_f(ftab)
+        p_tabs <- p_from_f(ftab)  # get information from the frequency table.
 
       ## Assemble with probability table provided by the user:
         p_row_us <- tab[1:3, 4:5]  # get row probability table.
         p_col_us <- tab[4:5, 1:3]  # get column probabiilty table.
 
       ## Combine the matrices:
-        ## TODO: Which is more relevant frequency or probabiility input (currently: frequencies)
+        ## TODO: Which is more relevant frequency or probability input (currently: frequencies)
         ## resolve the potential conflict in some way!
+        ## Maybe simply throw an error, if inconsistencies occur!
 
         p_row <- comb_tabs(p_tabs$p_row, p_row_us)  # reference table needs to be in the first place.
         p_col <- comb_tabs(p_tabs$p_col, p_col_us)
@@ -580,26 +581,45 @@ calc_tab <- function(tab) {
       ## (2) Calculate missing probabilities from Bayes' theorem: ------
         relf <- comp_ptab(p_row, p_col)  # calculate relf in one way ...
 
+        ## Here calculations fail in some cases, resulting in negative probs!
         ## TODO: Change in function what is returned to allow failure!
+        ## Apparently, some value combinations are not possible as well!
+            ## E.g., for ppod = .3; spec = .52; the NPV cannot be .5 (min ~.54)
+            ## TODO: Do these problems always coincide with negative values? Probably yes!
+            a <- relf$pcol
+            b <- relf$prow
+            (a[2,2] * b[3,2]) / (a[2,1]*b[3,1] + a[2,2] * b[3,2])  # this is equal to the NPV.
 
-        if(all(!relf$rftab)) {
-          relf <- comp_ptab(t(p_col), p_row)
-        }
 
-        ## If no relative frequency table can be calculated, return what has been possible and warn:
-        if(all(!relf$rftab)) {
+        ## TODO!
+        ## Test results for consistency:
+            ## Potential problems:
+              ## negative values
+              ##
 
-            warning("Cannot calculate the complete table from given frequencies and probabilities.\nI return everything possible."
-                    )
+          ## (a) Test for negative values:
+          neg_log <- any(unlist(relf) < 0 | unlist(relf) > 1)  # logical index.
 
-            tab[1:3, 1:3] <- ftab
-            tab[1:3, 4:5] <- p_row
-            tab[4:5, 1:3] <- p_col
-            tab[4, 4] <- p_tabs$p_dia
 
-            return(tab)
-
+          ## Test???:
+          if(all(!relf$rftab)) {
+            relf <- comp_ptab(t(p_col), p_row)
           }
+
+          ## If no relative frequency table can be calculated, return what has been possible and warn:
+          if(all(!relf$rftab)) {
+
+              warning("Cannot calculate the complete table from given frequencies and probabilities.\nI return everything possible."
+                      )
+
+              tab[1:3, 1:3] <- ftab
+              tab[1:3, 4:5] <- p_row
+              tab[4:5, 1:3] <- p_col
+              tab[4, 4] <- p_tabs$p_dia
+
+              return(tab)
+
+            }
 
     ## (D) Mixed calculations -------------------
         ## Calculate frequencies from relf:
@@ -632,6 +652,12 @@ calc_tab <- function(tab) {
 
             ftab2 <- f_from_rf(relf$rftab, N = N)
         }
+
+          ## TODO: Allow for some testing, whether N is identified (via calc_N?)
+          ## TODO: Test somewhere that summing up works (it does not necessarily! weird rounding?)
+              ## Case: tab <- test_p2; N <- 100
+              ## This may indiccate a general scaling problem, especially for smaller numbers (1000 is fine)...
+
 
 
         ## Check provided frequencies for equality:
