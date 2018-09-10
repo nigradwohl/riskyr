@@ -656,7 +656,7 @@ calc_tab <- function(tab) {
           ## TODO: Allow for some testing, whether N is identified (via calc_N?)
           ## TODO: Test somewhere that summing up works (it does not necessarily! weird rounding?)
               ## Case: tab <- test_p2; N <- 100
-              ## This may indiccate a general scaling problem, especially for smaller numbers (1000 is fine)...
+              ## This may indicate a general scaling problem, especially for smaller numbers (1000 is fine)...
 
 
 
@@ -732,13 +732,20 @@ calc_tab <- function(tab) {
 
         ## Simplified world:
         tst_smp <- test_p3  # use a minimal set.
+        calc_tab(tst_smp)  # not overspecified!
+        # here everything works fine, as no dependent inputs were specified.
+        tst_smp[4, 3] <- 0.01  ## this change poses a problem...
+        ## !!! Currently here!!!
         calc_tab(tst_smp)
-        tst_smp[4, 3] <- 0.01  # here everything works fine, as no dependent inputs were specified.
-        calc_tab(tst_smp)
-        tst_smp[4, 1]  <- 0.7  # increase PPV.
+        ## TODO! Not overspecified but:
+            ## - values diverge from app (rounding?)!
+            ## - Frequencies do not allow the same conclusions as probabilities (1/0 != 0.8)!
+
+        tst_smp[4, 1]  <- 0.7  # increase PPV; should lead to overspecification.
         calc_tab(tst_smp)  # still works, ignoring the probability information.
         tst_smp[1, 1]  <- 30
         calc_tab(tst_smp)  # including another frequency the program crashes.
+          ## TODO: Include stopping condition!
 
         ## TODO: Test probabilities and frequencies in advance!
 
@@ -753,6 +760,8 @@ calc_tab <- function(tab) {
         test_p23[3, 3] <- 100
         calc_tab(test_p23)  # problem: if I change the N, the rest does not follow suit!
         ## The inputs become inconsistent (maybe beyond repair?)
+        ## Note, tables cannot be altered in this fashion!
+        ## TODO: Manage the warning!  Output looks decent!
 
 
         ## The calculations are pretty fast!
