@@ -3,6 +3,8 @@
 
 ## A. Calculating frequencies: --------------------------
 
+library(riskyr)
+
 ## TODO: Function does not calculate sums currently! Necessary?
 
 ## TODO: Is a separation of rows and cols useful or is one sufficient with transposing?
@@ -137,23 +139,6 @@
 
   ## 1. If the frequency table is complete, calculate probabilities:
 
-
-  ## Set tolereance:
-  tol <- 0.001
-
-  ## OLD STUFF:
-  ## (a) Mute the frequency proportion:
-  ptab <- exp_tab
-
-  ## Set the dimensions of the frequency part:
-  frow <- 3
-  fcol <- 3
-  ## This may be done dynamically in the future.
-  ## TODO!
-  ptab[1:frow, 1:fcol] <- NA  # mute the frequency part.
-
-    ## Bayes rule: P(A|B) = (P(B|A) * P(A)) / P(B)
-
   ## (a) Calculate all complements (for 2 x n matrix): ------
     compr_pcomp <- function(p_tab, transpose = FALSE, tol = 0.001) {
 
@@ -233,17 +218,18 @@
       ## B. Calculate table:
 
           ## 1. Try to calculate relf_tab:
-           relf_tab <- ptb1[1:2, ] * ptb2[3, ]
+           relf_tab1 <- ptb1[1:2, ] * ptb2[3, ]
 
-           ## TODO: Return relf_tab here if complete? (depends on only returning relf tab.)
+           if(!any(is.na(relf_tab1))){  # stopping condition 1?
 
-           if(!any(is.na(relf_tab))){  # stopping condition 1?
+             rlf <- TRUE
 
-             relf_tab <- comp_rftab(relf_tab)  # complete the table.
-             pcol <- t(t(relf_tab[1:2, ]) / relf_tab[3, ])
-             prow <- relf_tab[, 1:2] / relf_tab[, 3]
-
-             return(list(rftab = relf_tab, prow = prow, pcol = pcol))
+             # ## Complete the table:
+             #   relf_tab <- comp_rftab(relf_tab)
+             #   pcol <- t(t(relf_tab[1:2, ]) / relf_tab[3, ])
+             #   prow <- relf_tab[, 1:2] / relf_tab[, 3]
+             #
+             # return(list(rftab = relf_tab, prow = prow, pcol = pcol))
            }
 
          ## 2. Test prerequisite for possible calculation:
@@ -253,8 +239,9 @@
            c2 <- sum(is.na(rowSums(ptb2))) < 2  & !any(is.na(ptb2[3, ]))
            ## less than 2 (1) may be NA, one needs to be an unconditional probability (in row 3).
 
+           ## Note: for optimally specified table these are false!
 
-         if(!(c1 & c2)) {
+         if(!(c1 & c2) & !rlf) {
 
            ## Warn, if not turned off:
            if(warn) warning("These probability tables do not allow for any calculation")
@@ -276,12 +263,24 @@
 
            ptb1 <- comb_tabs(ptb1, ptb1_temp)  # combine new information with old information.
 
+           relf_tab2 <- ptb2[1:2, ] * ptb1[3, ]  # calculate inverse table (but: what about cases with recursion?)
+           ## TODO: Test recursive cases!
+
+
+           isTRUE(all.equal(relf_tab1, relf_tab2))
+
            if(any(rowSums(is.na(ptb1)) == 1)) {  # if any row is incomplete:
              ptb1 <- compr_pcomp(ptb1)  # complete the table with complement (if necessary).
            }
 
+           #   relf_tab <- comp_rftab(relf_tab)
+           #   pcol <- t(t(relf_tab[1:2, ]) / relf_tab[3, ])
+           #   prow <- relf_tab[, 1:2] / relf_tab[, 3]
+           #
+           # return(list(rftab = relf_tab, prow = prow, pcol = pcol))
+
            ## Go into new recursive loop:
-            return(comp_ptab(ptb1, ptb2))
+            return(comp_ptab(ptb1, ptb2))  # when to do this?
        }
 
      }
@@ -290,8 +289,6 @@
      comp_ptab(pr, t(pc))  # get a relative frequency table.
         ## TODO: Is that sufficient?
      comp_ptab(t(pc), pr)  # this does (correctly) not work, as pc cannot be calculated.
-
-
 
 
 
@@ -388,27 +385,32 @@
 
 
           ## Way 1:
-          # ifelse(is.na(p_tabs$p_row),  # if an entry the first matrix is NA.
-          #        ifelse(is.na(p_row), NA, # and if the entry in the second matrix is NA there as well, code NA
-          #               p_row),  # else use the value from the second matrix.
-          #        ifelse(is.na(p_row), p_tabs$p_row,  # if the entry in the first matrix is not NA,
-          #               # but the second is, use the value of the frst matrix.
-          #               # otherwise compare the two values.
-          #               p_tabs$p_row
-          #        )
+            # ifelse(is.na(p_tabs$p_row),  # if an entry the first matrix is NA.
+            #        ifelse(is.na(p_row), NA, # and if the entry in the second matrix is NA there as well, code NA
+            #               p_row),  # else use the value from the second matrix.
+            #        ifelse(is.na(p_row), p_tabs$p_row,  # if the entry in the first matrix is not NA,
+            #               # but the second is, use the value of the frst matrix.
+            #               # otherwise compare the two values.
+            #               p_tabs$p_row
+            #        )
 
           ## Way 2: Alternative strategy:
-          ## Get indices for NA-values:
-          ixna1 <- is.na(tab1)
-          ixna2 <- is.na(tab2)
-          ix12 <- (!ixna1 & ixna2) | (ixna1 & !ixna2)  # statement for "either NA in 1 or NA in 2".
+            ## Get indices for NA-values:
+            ixna1 <- is.na(tab1)
+            ixna2 <- is.na(tab2)
+            ix12 <- (!ixna1 & ixna2) | (ixna1 & !ixna2)  # statement for "either NA in 1 or NA in 2".
 
-          ## Test tables for equality where none is NA:
-          tab_eq <- isTRUE(all.equal(tab1[!(ixna1 | ixna2)], tab2[!(ixna1 | ixna2)]))
-            ## get whether tables are equal everywhere they are not NA.
-            ## If any value is false, they do not match (sufficiently)
+            ## Test tables for equality where none is NA:
+            tab_eq <- isTRUE(all.equal(tab1[!(ixna1 | ixna2)], tab2[!(ixna1 | ixna2)]))
+              ## get whether tables are equal everywhere they are not NA.
+              ## If any value is false, they do not match (sufficiently)
 
-          if(!all(tab_eq)){warning("Provided inputs do not match within tolerance.")}
+          if(!all(tab_eq)){
+
+            ## To allow for general usage, throw a warning in case of inconsistency:
+            warning("Provided inputs do not match within tolerance. In conflicting cases the first input is used. ")
+
+            }
 
           ref_tab <- tab1  # set final matrix to reference matrix.
 
@@ -553,33 +555,81 @@ calc_tab <- function(tab) {
 
       ## (1) Calculate probability table from frequencies.
       ## TODO: Check first, whether necessary or possible?
-        p_tabs <- p_from_f(ftab)  # get information from the frequency table.
+        p_tabs <- p_from_f(ftab)  # get probability information from the frequency table.
 
       ## Assemble with probability table provided by the user:
         p_row_us <- tab[1:3, 4:5]  # get row probability table.
         p_col_us <- tab[4:5, 1:3]  # get column probabiilty table.
 
+  ## TODO: Hook in here and change the input!
+
       ## Combine the matrices:
-        ## TODO: Which is more relevant frequency or probability input (currently: frequencies)
-        ## resolve the potential conflict in some way!
-        ## Maybe simply throw an error, if inconsistencies occur!
 
-        p_row <- comb_tabs(p_tabs$p_row, p_row_us)  # reference table needs to be in the first place.
-        p_col <- comb_tabs(p_tabs$p_col, p_col_us)
+        ## Capture inconsistencies using tryCatch():
+          p_row <- tryCatch({
+            ## Execute the function:
+            comb_tabs(p_tabs$p_row, p_row_us)
+          },
+          ## If a warning occurs, throw an informative error message:
+          warning = function(w) {
+            message(w)
+            stop("Provided frequencies imply probabilities different from provided probabilities. ")
+          })
 
-        ## TODO: Check for inconsistencies beyond issuing a warning message!
-          ## Also include a note on what is done now (currently, frequencies are used)!
-        ## TODO: Check for consistency of complements?
+          p_col <- tryCatch({
+            comb_tabs(p_tabs$p_col,  p_col_us)
+            },
+            warning = function(w) {
+             message(w)
+              stop("Provided frequencies imply probabilities different from provided probabilities. ")
+              })
+
+
 
     ## (C) Calculate probabilities from probabilities: -----
 
-      ## (1) Calculate all possible probability complements (see above?): ------
+      ## (1) Calculate all possible probability complements: ------
         p_row <- compr_pcomp(p_row)
         p_col <- compr_pcomp(p_col, transpose = TRUE)
           ## transpose to use row function for columns.
 
+        ## Check for consistency of complements; throw error otherwise:
+          if(!all(test_pcomp(p_row), test_pcomp(t(p_col)))) {
+
+            row_num <- which(rowSums(p_row) != 1)  # get row numbers with errors.
+
+            if(length(row_num) > 0) {
+              row_err <- paste0("Row probabilities in row ", paste0(row_num, collapse = ", "))
+            } else {
+              row_err <- ""
+            }
+
+
+            col_num <- which(colSums(p_col) != 1)  # get col numbers with errors.
+            col_err <- ""
+            if(length(col_num) > 0) {
+              if(length(row_num) > 0) {
+                col_err <- paste0(" and column probabilities in column ", paste0(col_num, collapse = ", "))
+              } else {
+                col_err <- paste0("Column probabilities in column ", paste0(col_num, collapse = ", "))
+              }
+
+            }
+
+            ## Compose error message:
+              comp_const <- paste0(row_err, col_err, " do not add up to 1. ")
+
+            ## Throw an error message:
+            stop(comp_const)
+          }
+
+      ## HERE!!!###
       ## (2) Calculate missing probabilities from Bayes' theorem: ------
-        relf <- comp_ptab(p_row, p_col)  # calculate relf in one way ...
+        relfr <- comp_ptab(p_row, p_col)  # calculate relf in one way ...
+        relfc <- comp_ptab(t(p_col), p_row)  # calculate relf in the other way ...
+
+        ## TODO: How to handle overspecification?  Currently: overriding some specifications
+        ## Is it possible that
 
         ## Here calculations fail in some cases, resulting in negative probs!
         ## TODO: Change in function what is returned to allow failure!
@@ -659,12 +709,11 @@ calc_tab <- function(tab) {
               ## This may indicate a general scaling problem, especially for smaller numbers (1000 is fine)...
 
 
-
         ## Check provided frequencies for equality:
           ftab_eq <- ftab == ftab2
 
           if(!all(ftab_eq[!is.na(ftab_eq)])) {
-            warning("Frequencies calculated from probabilities do not match provided frequencies. ")
+           stop("Frequencies calculated from probabilities do not match provided frequencies. ")
 
             ## TODO: Problem occurs here!
               ## If frequency inputs do not match probability inputs this results in infinite recursion on ftab!
@@ -726,7 +775,7 @@ calc_tab <- function(tab) {
         system.time({calc_tab(test_p22)})  # still works.
 
         test_p22[5, 3] <- 0.3  # changing 1- prev.
-        calc_tab(test_p22)  # does not work propoerly anymore for 0.7 (smaller values are okay).
+        calc_tab(test_p22)  # does not work properly anymore for 0.7 (smaller values are okay).
           ## Problem: values depend on each other, but only one is changed (update function?)
           ## Some givens still seem to change...
 
@@ -735,11 +784,16 @@ calc_tab <- function(tab) {
         calc_tab(tst_smp)  # not overspecified!
         # here everything works fine, as no dependent inputs were specified.
         tst_smp[4, 3] <- 0.01  ## this change poses a problem...
-        ## !!! Currently here!!!
-        calc_tab(tst_smp)
+
+        calc_tab(tst_smp)  # the other way round it works...
+        comp_NPV(0.01, 0.8, 0.78)
+        comp_NPV(0.2258, 0.03542958, 0.997416688)
+        comp_PPV(0.2258, 0.03542958, 0.997416688)  # this way actually as well...
+        ## TODO: In the app the PPV for this scenario is off! (probably due to high sensitivity to changes near 1)
         ## TODO! Not overspecified but:
-            ## - values diverge from app (rounding?)!
             ## - Frequencies do not allow the same conclusions as probabilities (1/0 != 0.8)!
+
+        ## !!! Currently here!!!
 
         tst_smp[4, 1]  <- 0.7  # increase PPV; should lead to overspecification.
         calc_tab(tst_smp)  # still works, ignoring the probability information.
