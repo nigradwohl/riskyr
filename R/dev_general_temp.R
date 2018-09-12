@@ -220,6 +220,8 @@ library(riskyr)
           ## 1. Try to calculate relf_tab:
            relf_tab1 <- ptb1[1:2, ] * ptb2[3, ]
 
+           rlf <- FALSE
+
            if(!any(is.na(relf_tab1))){  # stopping condition 1?
 
              rlf <- TRUE
@@ -261,23 +263,43 @@ library(riskyr)
            ## Bind the CPs and UCPs:
            ptb1_temp <- rbind(ptb1r12, ptb1r3, deparse.level = 0)   # set deparse.level to avoid naming.
 
-           ptb1 <- comb_tabs(ptb1, ptb1_temp)  # combine new information with old information.
+           ptb1_temp <- comb_tabs(ptb1, ptb1_temp)  # combine new information with old information.
 
-           relf_tab2 <- ptb2[1:2, ] * ptb1[3, ]  # calculate inverse table (but: what about cases with recursion?)
-           ## TODO: Test recursive cases!
+           ## Calculate missing complements:
+             if(any(rowSums(is.na(ptb1_temp)) == 1)) {  # if any row is incomplete:
+               ptb1 <- compr_pcomp(ptb1_temp)  # complete the table with complement (if necessary).
+             }
+
+           ## Calculate inverse table (but: what about cases with recursion?):
+             relf_tab2 <- ptb2[1:2, ] * ptb1_temp[3, ]
+             ## TODO: Test recursive cases!
+
+           ## Test, whether tables (without NA are equal):
+             one_na <- is.na(relf_tab1) | is.na(relf_tab2)
+             rlf_eq <- isTRUE(all.equal(relf_tab1[!one_na], relf_tab2[!one_na]))
+
+           if(!rlf_eq) {  # in case the two tables are unequal:
+
+             ## Test, where the problem is:
+             which(relf_tab1 != relf_tab2, arr.ind = TRUE)
+
+             stop("Specified probabilities are inconsistent!")
+
+             ## Use a handler in the final function to localize the problematic inputs!
+
+           } else {
+
+             if (rlf) {  # for eqal tables return them, given that it is complete!
+
+               relf_tab <- comp_rftab(relf_tab)
+               pcol <- t(t(relf_tab[1:2, ]) / relf_tab[3, ])
+               prow <- relf_tab[, 1:2] / relf_tab[, 3]
+
+               return(list(rftab = relf_tab, prow = prow, pcol = pcol))
+             }
 
 
-           isTRUE(all.equal(relf_tab1, relf_tab2))
-
-           if(any(rowSums(is.na(ptb1)) == 1)) {  # if any row is incomplete:
-             ptb1 <- compr_pcomp(ptb1)  # complete the table with complement (if necessary).
            }
-
-           #   relf_tab <- comp_rftab(relf_tab)
-           #   pcol <- t(t(relf_tab[1:2, ]) / relf_tab[3, ])
-           #   prow <- relf_tab[, 1:2] / relf_tab[, 3]
-           #
-           # return(list(rftab = relf_tab, prow = prow, pcol = pcol))
 
            ## Go into new recursive loop:
             return(comp_ptab(ptb1, ptb2))  # when to do this?
@@ -625,7 +647,38 @@ calc_tab <- function(tab) {
 
       ## HERE!!!###
       ## (2) Calculate missing probabilities from Bayes' theorem: ------
-        relfr <- comp_ptab(p_row, p_col)  # calculate relf in one way ...
+        relfr <- tryCatch({
+          comp_ptab(p_row, p_col)  # calculate relf in one way ...
+        },
+        error = function (e) {
+
+          ## Start some testing:
+            ## Is the problem in user probability input?
+              us_r <- compr_pcomp(p_row_us)
+              us_c <- t(compr_pcomp(t(p_col_us)))
+
+              us <- tryCatch({
+                comp_ptab(us_r, us_c)
+              },
+              error = function(e) {
+
+                stop("Your specified probabilities are inconsistent and the table is overspecified.
+                     Please enter only two probabilities in each dimension,
+                     containing at least one unconditional probability (prev, ppod, ...;
+                     in case of redundant probabilities you may enter more)")
+
+              ## TODO: Make this handler scenario dependent!
+
+              }
+              )
+
+
+            ## Or then rather in probabilities from frequencies?
+              stop("Probabilities derived from your frequencies do not match the specified probabilities. ")
+
+
+        })
+
         relfc <- comp_ptab(t(p_col), p_row)  # calculate relf in the other way ...
 
         ## TODO: How to handle overspecification?  Currently: overriding some specifications
