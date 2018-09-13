@@ -201,7 +201,8 @@ library(riskyr)
         # ptb1; ptb2
 
     ## Function:
-      comp_ptab <- function(ptb1, ptb2, warn = FALSE) {
+      comp_ptab <- function(ptb1, ptb2, transp_relf = FALSE,  # should relf be transposed?
+                            warn = FALSE) {
 
        ## A. Checking:
 
@@ -253,7 +254,7 @@ library(riskyr)
 
          } else {
 
-         ## 2. Try to calculate any other probability:
+         ## 3. Try to calculate any other probability:
            # tb1r1 <- tb2[1:2, 1] * tb1[3, ] / tb2[3, 1]  # tb1 row 1.
            # tb1r2 <- tb2[1:2, 2] * tb1[3, ] / tb2[3, 2]  # tb1 row 2.
 
@@ -267,21 +268,25 @@ library(riskyr)
 
            ## Calculate missing complements:
              if(any(rowSums(is.na(ptb1_temp)) == 1)) {  # if any row is incomplete:
-               ptb1 <- compr_pcomp(ptb1_temp)  # complete the table with complement (if necessary).
+               ptb1_temp <- compr_pcomp(ptb1_temp)  # complete the table with complement (if necessary).
              }
 
+        ## C. Testing: ----------------
+
+          ## 1. Test whether inputs are consistent:
            ## Calculate inverse table (but: what about cases with recursion?):
              relf_tab2 <- t(ptb2[1:2, ] * ptb1_temp[3, ])
-             ## TODO: Test recursive cases!
+
+           ## TODO: Also calculate other values within the function?
 
            ## Test, whether tables (without NA are equal):
-             one_na <- is.na(relf_tab1) | is.na(relf_tab2)
-             rlf_eq <- isTRUE(all.equal(relf_tab1[!one_na], relf_tab2[!one_na]))
+             onetab_na <- is.na(relf_tab1) | is.na(relf_tab2)
+             rlf_eq <- isTRUE(all.equal(relf_tab1[!onetab_na], relf_tab2[!onetab_na]))
 
            if(!rlf_eq) {  # in case the two tables are unequal:
 
              ## Test, where the problem is:
-             which(relf_tab1 != relf_tab2, arr.ind = TRUE)
+             # which(relf_tab1 != relf_tab2, arr.ind = TRUE)
 
              stop("Specified probabilities are inconsistent!")
 
@@ -289,28 +294,48 @@ library(riskyr)
 
            } else {
 
-             if (rlf) {  # for eqal tables return them, given that it is complete!
+             ## If tables are equal (outer) and one table was complete:
+               if (rlf) {
 
-               relf_tab <- comp_rftab(relf_tab1)
-               pcol <- t(t(relf_tab[1:2, ]) / relf_tab[3, ])
-               prow <- relf_tab[, 1:2] / relf_tab[, 3]
+                 relf_tab <- if (transp_relf) t(comp_rftab(relf_tab1)) else comp_rftab(relf_tab1)
 
-               return(list(rftab = relf_tab, prow = prow, pcol = pcol))
-             }
+                 pcol <- t(t(relf_tab[1:2, ]) / relf_tab[3, ])
+                 prow <- relf_tab[, 1:2] / relf_tab[, 3]
 
+                 return(list(rftab = relf_tab, prow = prow, pcol = pcol))
 
-           }
+               } else {  ## If tables are equal (outer) but none was complete:
+
+                 relf_tab <- comb_tabs(relf_tab1, relf_tab2)  # combine tables.
+
+                 ## If only one element is missing:
+                 if(sum(is.na(relf_tab)) == 1) {
+                   relf_tab[is.na(relf_tab)] <- 1 - sum(relf_tab, na.rm = TRUE)
+                 }
+
+                 ## HERE!
+
+                 relf_tab <- comp_rftab(relf_tab)  # complete the table.
+                 ptb1 <- relf_tab[, 1:2] / relf_tab[, 3]
+                 ptb2 <- t(t(relf_tab[1:2, ]) / relf_tab[3, ])
+
+               }
+
 
            ## Go into new recursive loop:
-            return(comp_ptab(ptb1, ptb2))  # when to do this?
-       }
+            return(comp_ptab(ptb1, ptb2, transp_relf = transp_relf, warn = warn))  # when to do this?
 
-     }
+             ## TODO: Can this recursive case happen without overflow?
+            }
 
-    ## Test the function:
-     comp_ptab(p_row, p_col)  # get a relative frequency table.
-        ## TODO: Is that sufficient?
-     comp_ptab(t(pc), pr)  # this does (correctly) not work, as pc cannot be calculated.
+         }
+      }
+
+#
+#     ## Test the function:
+#      comp_ptab(p_row, p_col)  # get a relative frequency table.
+#         ## TODO: Is that sufficient?
+#      comp_ptab(t(pc), pr)  # this does (correctly) not work, as pc cannot be calculated.
 
 
 
@@ -518,39 +543,41 @@ tab <- test_p2
 
 calc_tab <- function(tab) {
 
-  ## Get the dimensions:
-    n_row <- nrow(tab)
-    n_col <- ncol(tab)
+  ## (X) Preparations: -----
+    ## Get the dimensions:
+      n_row <- nrow(tab)
+      n_col <- ncol(tab)
 
-  ## Currently all calculations are implemented for a 2x2 frequency table + sums and probabilities (5x5) only!
-  ## Throw an exception, if the table does not match:
-    if(!all(c(n_row, n_col) == c(5, 5))) {
+    ## Currently all calculations are implemented for a 2x2 frequency table + sums and probabilities (5x5) only!
+    ## Throw an exception, if the table does not match:
+      if(!all(c(n_row, n_col) == c(5, 5))) {
 
-      ## Create matrix for display:
-        mt1 <- matrix(c(rep("freq", 9), rep("prob", 6)), ncol = 5)
-        mt2 <- matrix(c(rep("prob", 7), rep(" NA ", 3)), ncol = 5)
-        mt <- rbind(mt1, mt2)
+        ## Create matrix for display:
+          mt1 <- matrix(c(rep("freq", 9), rep("prob", 6)), ncol = 5)
+          mt2 <- matrix(c(rep("prob", 7), rep(" NA ", 3)), ncol = 5)
+          mt <- rbind(mt1, mt2)
 
-        mt_rnd <- paste0(apply(mt, 1, paste0, collapse = " | "), collapse = "\n")  # rendered table.
+          mt_rnd <- paste0(apply(mt, 1, paste0, collapse = " | "), collapse = "\n")  # rendered table.
 
-        ## Some additional text:
-        errtxt <- "Table dimensions do not fit.  I need a 5x5 table of the following form:"
+          ## Some additional text:
+          errtxt <- "Table dimensions do not fit.  I need a 5x5 table of the following form:"
 
-        stop(paste0(errtxt, "\n\n", mt_rnd, "\n\n(Some values may still be NA)"))
-    }
-
-
-    ## (X) Check for any NAs: -----
-        mat_hlp <- matrix(TRUE, ncol = n_col, nrow = n_row)  # helper matrix where to check.
-        mat_hlp[5, c(4, 5)] <- FALSE
-        mat_hlp[4, 5] <- FALSE
-        na_log <- is.na(tab) & mat_hlp  # get matrix of NAs overall.
-
-      ## If there are no NAs in the releavant portion, return the table:
-      if (!any(na_log)) {
-        return(tab)  # return, if table is already complete.
+          stop(paste0(errtxt, "\n\n", mt_rnd, "\n\n(Some values may still be NA)"))
       }
-        ## TODO: Note, this might be migrated to the outer function...
+
+
+      ## (c) Check for any NAs: -----
+          mat_hlp <- matrix(TRUE, ncol = n_col, nrow = n_row)  # helper matrix where to check.
+          mat_hlp[5, c(4, 5)] <- FALSE
+          mat_hlp[4, 5] <- FALSE
+          na_log <- is.na(tab) & mat_hlp  # get matrix of NAs overall.
+
+        ## If there are no NAs in the releavant portion, return the table:
+        if (!any(na_log)) {
+          return(tab)  # return, if table is already complete.
+        }
+          ## TODO: Note, this might be migrated to the outer function...
+
 
 
     ## (A) Calculate frequencies from frequencies: -----
@@ -707,7 +734,7 @@ calc_tab <- function(tab) {
           relfc <- tryCatch({
 
             ## Try to calculate the probability tables:
-            comp_ptab(t(p_col), p_row)  # calculate relf in one way ...
+            comp_ptab(t(p_col), p_row, transp_relf = TRUE)  # calculate relf in one way ...
 
             },
             ## If an error occurs:
@@ -722,7 +749,7 @@ calc_tab <- function(tab) {
 
               ## Test whether user inputs are okay:
               us <- tryCatch({
-                comp_ptab(t(us_c), us_r)  # try function on user inputs.
+                comp_ptab(t(us_c), us_r, transp_relf = TRUE)  # try function on user inputs.
               },
 
               ## If an error occurs, this is evidence that user inputs already were flawed:
@@ -758,43 +785,106 @@ calc_tab <- function(tab) {
         ## Apparently, some value combinations are not possible as well!
             ## E.g., for ppod = .3; spec = .52; the NPV cannot be .5 (min ~.54)
             ## TODO: Do these problems always coincide with negative values? Probably yes!
-            a <- relf$pcol
-            b <- relf$prow
-            (a[2,2] * b[3,2]) / (a[2,1]*b[3,1] + a[2,2] * b[3,2])  # this is equal to the NPV.
 
 
+        ## (c) Testing the results: ------------------------------------
         ## TODO!
         ## Test results for consistency:
             ## Potential problems:
+              ## No table can be calculated
               ## negative values
               ##
 
-          ## (a) Test for negative values: (Probably nor necessary anymore)
-          neg_log <- any(unlist(relf) < 0 | unlist(relf) > 1)  # logical index.
+        ## Note: is.logical() does not work for testing, as it encounters a list both times!
+
+          ## (i) Test whether the table can be calculated from at least one direction: ------
+            ## For testing use output length!
+            lenr <- length(relfr) == 1
+            lenc <- length(relfc) == 1
+
+            if (all(lenr, lenc)) {
+
+              ## TODO: Is it possible to calculate some (relative) frequencies and then continue?
+                ## Related to below: may allow to calculate N!
+
+              ## Therefore, comp_ptab should return everything it can calculate, in every case!
+
+              ## TODO: Here one may also intersect probabilities and frequencies!
+                ## See test_p23: calculate frequency from corresponding probability.
+                ## Traces back to obervation that 1 frequenccy and 1 probability per row is sufficient.
+
+              ## For sum frequencies:
+                ftab[, 1:2] / p_row
+
+                ftab[1:2, ] / p_col
+
+              ## For cell frequencies:
+                ftab[, 3] * p_row
+                t(ftab[3, ] * t(p_col))
+
+                ## Currently HERE !!! ##
+
+              # stop("The information you specified is not sufficient to produce the table.
+              #      I need at leas one more input. ")
+
+              ## Alternatively:
+                warning("Cannot calculate the complete table from given frequencies and probabilities.\nI return everything possible."
+                )
+
+                tab[1:3, 1:3] <- ftab
+                tab[1:3, 4:5] <- p_row
+                tab[4:5, 1:3] <- p_col
+                tab[4, 4] <- p_tabs$p_dia
+
+                return(tab)
+            }
 
 
-          ## Test???:
-          if(all(!relf$rftab)) {
-            relf <- comp_ptab(t(p_col), p_row)
-          }
+              ## If at least one table can be calculated, continue:
 
-          ## If no relative frequency table can be calculated, return what has been possible and warn:
-          if(all(!relf$rftab)) {
+          ## (ii) Given that both tables could be calculated test and combine them: --------
+            if (!any(lenr, lenc)) {
 
-              warning("Cannot calculate the complete table from given frequencies and probabilities.\nI return everything possible."
-                      )
+              ## Compare them:
+              if(isTRUE(all.equal(relfr, relfc))) {
 
-              tab[1:3, 1:3] <- ftab
-              tab[1:3, 4:5] <- p_row
-              tab[4:5, 1:3] <- p_col
-              tab[4, 4] <- p_tabs$p_dia
+                relf <- relfr  # combine them if equal.
 
-              return(tab)
+              } else {  # if both tables were calculated but are inconsistent:
+
+                ## Issue an error message!
+                stop("Inputs are inconsistent! ")  ## TODO: Make error message more informative!
+
+              }
+
+            } else {  # if one could not be calculated:
+
+              relf <- list(relfr, relfc)[!c(lenr, lenc)][[1]]  # get calculated table.
 
             }
 
+        ## (iii) Test for negative values: ---------
+        neg_log <- any(unlist(relf) < 0 | unlist(relf) > 1)  # logical index.
+
+          ## Negative values occur if values are specified which are not possible according to the functions
+            ## e.g, prev (uc) of 0.3, spec (cc) of 0.49, and an NPV of 0.52 (cc; min for all sens 0.54).
+
+        if (neg_log) {  # if negative values occur:
+
+          ## Identify where negative values stem from:
+
+
+          stop("Value error: Your inputs produced negative values.
+               This indicates that you entered an impossible case. Please revise your inputs. ")
+
+          ## TODO: make the messge more informative!
+
+        }
+
     ## (D) Mixed calculations -------------------
         ## Calculate frequencies from relf:
+
+        ## HERE!
 
         # relf <- comp_rftab(relf)  ## complete the table.
 
@@ -804,21 +894,40 @@ calc_tab <- function(tab) {
 
           if (all_na_ftab) {  # test, whether any frequency was provided, if not:
 
+            ## Note, that this case seems very unlikely...
+
+            ## Testing table:
+            # [,1]      [,2]      [,3]
+            # [1,] 0.1752577 0.2577320 0.4329897
+            # [2,] 0.2886598 0.2783505 0.5670103
+            # [3,] 0.4639175 0.5360825 1.0000000
+
+            ## 97 is optimal (all integer frequencies)!
+            ## One might test what is an optimal factor...
+
+            # riskyr:::factors_min_diff
+
             prec <- 5
             N <- 10^0  # set N.
-            rftb <- round(relf$rftab, prec) * N
-            while(!all(rftb > 0 & isTRUE(all.equal(rftb %% 1, 0)))) {
+            rftb <- round(relf$rftab, prec) * N  # multiply by 1.
+            while(!all(rftb > 1)) {
               N <- N * 10
               rftb <- rftb * N
             }
 
-            rftb
+            # rftb
+
+            round(rftb * N, 1)
+
+            ## TODO: Find a nice method to calculate N.
 
           }
 
           ## If other frequencies are available:
             ftab2 <- f_from_rf(relf$rftab, ftab)
             ## TODO: Also check against N?
+
+            N <- calc_N(relf$rftab, ftab)
 
         } else {  # if an N is avaliable use it:
 
@@ -846,9 +955,6 @@ calc_tab <- function(tab) {
           } else {
             ftab <- ftab2
           }
-
-
-
 
 
     ## (E) General consistency checks:
@@ -886,17 +992,18 @@ calc_tab <- function(tab) {
             return(list(tab, tabrf))
           }
 
-}
+}  # eof calc_tab.
 
-
+## Testing:
         calc_tab(test_p2)
+        all.equal(complete_tab, calc_tab(test_p2)[[1]])
 
         test_p22 <- test_p2
         test_p22[1, ] <- NA  # remove first line.
 
         system.time({calc_tab(test_p22)})  # still works.
 
-        test_p22[5, 3] <- 0.3  # changing 1- prev.
+        test_p22[5, 3] <- 0.7  # changing 1- prev.
         calc_tab(test_p22)  # does not work properly anymore for 0.7 (smaller values are okay).
           ## Problem: values depend on each other, but only one is changed (update function?)
           ## Some givens still seem to change...
@@ -905,35 +1012,28 @@ calc_tab <- function(tab) {
         tst_smp <- test_p3  # use a minimal set.
         calc_tab(tst_smp)  # not overspecified!
         # here everything works fine, as no dependent inputs were specified.
-        tst_smp[4, 3] <- 0.01  ## this change poses a problem...
+        tst_smp[4, 3] <- 0.01
 
-        calc_tab(tst_smp)  # the other way round it works...
-        comp_NPV(0.01, 0.8, 0.78)
-        comp_NPV(0.2258, 0.03542958, 0.997416688)
-        comp_PPV(0.2258, 0.03542958, 0.997416688)  # this way actually as well...
-        ## TODO: In the app the PPV for this scenario is off! (probably due to high sensitivity to changes near 1)
-        ## TODO! Not overspecified but:
-            ## - Frequencies do not allow the same conclusions as probabilities (1/0 != 0.8)!
+        calc_tab(tst_smp)
 
-        ## !!! Currently here!!!
+        tst_smp[4, 1]  <- 0.7  # add PPV; should lead to overspecification.
+        calc_tab(tst_smp)  # error message due to overspecifiaction.
 
-        tst_smp[4, 1]  <- 0.7  # increase PPV; should lead to overspecification.
-        calc_tab(tst_smp)  # still works, ignoring the probability information.
+        tst_smp[4, 1]  <- NA
         tst_smp[1, 1]  <- 30
-        calc_tab(tst_smp)  # including another frequency the program crashes.
-          ## TODO: Include stopping condition!
-
-        ## TODO: Test probabilities and frequencies in advance!
+        calc_tab(tst_smp)  # including another frequency: error for inconsistency.
 
         test_p23 <- test_p2
         test_p23[, 3] <- NA
         calc_tab(test_p23)  # this doesn't work; more informative error message?
+        ## TODO: This would work! In row 1 one could calculate col 3 from prob and (rel)freq!
+        ## [1,3] * 0.595 = 25 <=> [1, 3] = 25 / 0.595 = 42
 
         test_p23[3, 3] <- 32
-        calc_tab(test_p23)  # nte: N of 32 is stupid and should lead to a warning
+        calc_tab(test_p23)  # note: N of 32 is stupid and should lead to a warning
          ## (as not in line with other frequencies)
 
-        test_p23[3, 3] <- 100
+        test_p23[3, 3] <- 97
         calc_tab(test_p23)  # problem: if I change the N, the rest does not follow suit!
         ## The inputs become inconsistent (maybe beyond repair?)
         ## Note, tables cannot be altered in this fashion!
