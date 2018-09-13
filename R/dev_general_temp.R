@@ -919,7 +919,7 @@ calc_tab <- function(tab) {
 
             round(rftb * N, 1)
 
-            ## TODO: Find a nice method to calculate N.
+            ## TODO: Find a nice method to calculate N (with controlled rounding, as well).
 
           }
 
