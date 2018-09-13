@@ -271,7 +271,7 @@ library(riskyr)
              }
 
            ## Calculate inverse table (but: what about cases with recursion?):
-             relf_tab2 <- ptb2[1:2, ] * ptb1_temp[3, ]
+             relf_tab2 <- t(ptb2[1:2, ] * ptb1_temp[3, ])
              ## TODO: Test recursive cases!
 
            ## Test, whether tables (without NA are equal):
@@ -291,7 +291,7 @@ library(riskyr)
 
              if (rlf) {  # for eqal tables return them, given that it is complete!
 
-               relf_tab <- comp_rftab(relf_tab)
+               relf_tab <- comp_rftab(relf_tab1)
                pcol <- t(t(relf_tab[1:2, ]) / relf_tab[3, ])
                prow <- relf_tab[, 1:2] / relf_tab[, 3]
 
@@ -308,7 +308,7 @@ library(riskyr)
      }
 
     ## Test the function:
-     comp_ptab(pr, t(pc))  # get a relative frequency table.
+     comp_ptab(p_row, p_col)  # get a relative frequency table.
         ## TODO: Is that sufficient?
      comp_ptab(t(pc), pr)  # this does (correctly) not work, as pc cannot be calculated.
 
@@ -591,12 +591,12 @@ calc_tab <- function(tab) {
           p_row <- tryCatch({
             ## Execute the function:
             comb_tabs(p_tabs$p_row, p_row_us)
-          },
-          ## If a warning occurs, throw an informative error message:
-          warning = function(w) {
-            message(w)
-            stop("Provided frequencies imply probabilities different from provided probabilities. ")
-          })
+            },
+            ## If a warning occurs, throw an informative error message:
+            warning = function(w) {
+              message(w)
+              stop("Provided frequencies imply probabilities different from provided probabilities. ")
+            })
 
           p_col <- tryCatch({
             comb_tabs(p_tabs$p_col,  p_col_us)
@@ -618,23 +618,27 @@ calc_tab <- function(tab) {
         ## Check for consistency of complements; throw error otherwise:
           if(!all(test_pcomp(p_row), test_pcomp(t(p_col)))) {
 
-            row_num <- which(rowSums(p_row) != 1)  # get row numbers with errors.
+            ## Gather information to output an informative error message:
+              row_num <- which(rowSums(p_row) != 1)  # get row numbers with errors.
 
-            if(length(row_num) > 0) {
-              row_err <- paste0("Row probabilities in row ", paste0(row_num, collapse = ", "))
-            } else {
-              row_err <- ""
-            }
-
-
-            col_num <- which(colSums(p_col) != 1)  # get col numbers with errors.
-            col_err <- ""
-            if(length(col_num) > 0) {
+              ## Paste rows with complements not addig up to 1:
               if(length(row_num) > 0) {
-                col_err <- paste0(" and column probabilities in column ", paste0(col_num, collapse = ", "))
+                row_err <- paste0("Row probabilities in row ", paste0(row_num, collapse = ", "))
               } else {
-                col_err <- paste0("Column probabilities in column ", paste0(col_num, collapse = ", "))
+                row_err <- ""  # if no rows exist, leave empty.
               }
+
+
+              col_num <- which(colSums(p_col) != 1)  # get col numbers with errors.
+              col_err <- ""
+
+              ## Paste columns with complements not addig up to 1:
+              if(length(col_num) > 0) {
+                if(length(row_num) > 0) {
+                  col_err <- paste0(" and column probabilities in column ", paste0(col_num, collapse = ", "))
+                } else {  # if no rows are erroneous:
+                  col_err <- paste0("Column probabilities in column ", paste0(col_num, collapse = ", "))
+                }
 
             }
 
@@ -647,45 +651,110 @@ calc_tab <- function(tab) {
 
       ## HERE!!!###
       ## (2) Calculate missing probabilities from Bayes' theorem: ------
-        relfr <- tryCatch({
-          comp_ptab(p_row, p_col)  # calculate relf in one way ...
-        },
-        error = function (e) {
+        ## For both directions test for inconsistent probabilities
+        ## if the function throws an error, search for the reason to output an informative error message.
 
-          ## Start some testing:
-            ## Is the problem in user probability input?
+        ## (a) Calculation from the direction of the row-table: -----
+          relfr <- tryCatch({
+
+            ## Try to calculate the probability tables:
+              comp_ptab(p_row, p_col)  # calculate relf in one way ...
+
+            },
+            ## If an error occurs:
+            error = function (e) {
+
+              ## Start some testing:
+                ## Is the problem in user probability input?
+                  ## Get user inputs:
+                  us_r <- compr_pcomp(p_row_us)
+                  us_c <- t(compr_pcomp(t(p_col_us)))
+                  us <- NULL
+
+                  ## Test whether user inputs are okay:
+                  us <- tryCatch({
+                    comp_ptab(us_r, us_c)  # try function on user inputs.
+                  },
+
+                  ## If an error occurs, this is evidence that user inputs already were flawed:
+                  error = function(e) {
+
+                    # message(e)  # output the original error.
+                    stop("Probably: Your specified probabilities are inconsistent and the table is overspecified.
+                         Please enter only two probabilities in each dimension,
+                         containing at least one unconditional probability (prev, ppod, ...;
+                         in case of redundant probabilities you may enter more)")
+
+                  ## TODO: Make this handler scenario dependent by specifying some identifying return value!
+
+                  }
+                  )  # end inner tryCatch().
+
+                  if(length(us) > 0) {  # as soon as there is any output to us:
+                    ## If the try catch on user input does not produce an error due to inconsistency,
+                    ## it has to be dependent on the frequencies specified.
+
+                    # message(e)  # output the original error.
+                    stop("Probabilities derived from your frequencies do not match the specified probabilities.
+                         Please specify whether you want the table to be based on frequencies or probabilities
+                         by deleting one of them. ")
+                  }
+
+
+            })  # end testing relfr.
+
+        ## (b) Calculation from the direction of the column-table: -----
+          relfc <- tryCatch({
+
+            ## Try to calculate the probability tables:
+            comp_ptab(t(p_col), p_row)  # calculate relf in one way ...
+
+            },
+            ## If an error occurs:
+            error = function (e) {
+
+              ## Start some testing:
+              ## Is the problem in user probability input?
+              ## Get user inputs:
               us_r <- compr_pcomp(p_row_us)
               us_c <- t(compr_pcomp(t(p_col_us)))
+              us <- NULL  # set flag to NULL.
 
+              ## Test whether user inputs are okay:
               us <- tryCatch({
-                comp_ptab(us_r, us_c)
+                comp_ptab(t(us_c), us_r)  # try function on user inputs.
               },
+
+              ## If an error occurs, this is evidence that user inputs already were flawed:
               error = function(e) {
 
-                stop("Your specified probabilities are inconsistent and the table is overspecified.
+                # message(e)  # output the original error.
+                stop("Probably: Your specified probabilities are inconsistent and the table is overspecified.
                      Please enter only two probabilities in each dimension,
                      containing at least one unconditional probability (prev, ppod, ...;
                      in case of redundant probabilities you may enter more)")
 
-              ## TODO: Make this handler scenario dependent!
+                ## TODO: Make this handler scenario dependent by specifying some identifying return value!
 
               }
-              )
+                )  # end inner tryCatch() for relfc.
 
 
-            ## Or then rather in probabilities from frequencies?
-              stop("Probabilities derived from your frequencies do not match the specified probabilities. ")
+              ## If the try catch on user input does not produce an error due to inconsistency,
+              ## it has to be dependent on the frequencies specified.
 
+              # message(e)  # output the original error.
+              stop("Probabilities derived from your frequencies do not match the specified probabilities.
+                   Please specify whether you want the table to be based on frequencies or probabilities
+                   by deleting one of them. ")
 
-        })
+          })  # end testing relfc.
 
-        relfc <- comp_ptab(t(p_col), p_row)  # calculate relf in the other way ...
+        ## TODO: Do relfr and relfc always produce the same result, 1 no result, 2 no result, or an error?
+        ## Or are inconsistent outputs still possible?:
+        ## Apparently, you can get no error in one but an error in the other.  So always both should be checked.
 
-        ## TODO: How to handle overspecification?  Currently: overriding some specifications
-        ## Is it possible that
-
-        ## Here calculations fail in some cases, resulting in negative probs!
-        ## TODO: Change in function what is returned to allow failure!
+        ## TODO:
         ## Apparently, some value combinations are not possible as well!
             ## E.g., for ppod = .3; spec = .52; the NPV cannot be .5 (min ~.54)
             ## TODO: Do these problems always coincide with negative values? Probably yes!
@@ -700,7 +769,7 @@ calc_tab <- function(tab) {
               ## negative values
               ##
 
-          ## (a) Test for negative values:
+          ## (a) Test for negative values: (Probably nor necessary anymore)
           neg_log <- any(unlist(relf) < 0 | unlist(relf) > 1)  # logical index.
 
 
