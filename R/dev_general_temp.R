@@ -418,6 +418,41 @@ library(riskyr)
 
         }
 
+  ## 3. Function to calculate frequencies from prob and frequency (condprob * freq = ucprob): -----------
+
+        ## TODO: Probably an early function!
+        ## Test case (definition below):
+        tst <- test_p23  # [1, 3] can be calculated from [1, 2] / [1, 5] = 25/.595!
+
+
+        tst <- complete_tab
+
+        ## Note: Acts on the whole table!  needs all inputs.
+
+        ## Function:
+        f_from_pf <- function(tab) {
+          ## Note: For rows only (analogous for columns by transposing).
+          ## Sum frequency:
+          rsfreq <- tab[1:3, 1:2] / tab[1:3, 4:5]
+          ## calculates sum frequency from probability.
+          sfreq <- comb_tabs(rsfreq[, 1], rsfreq[, 2])
+
+          ## Cell frequency:
+          cfreq <- tab[1:3, 3] * tab[1:3, 4:5]
+          ## Calculates cell frequency from probability.
+          ## Bind and combine:
+          rfreq <- cbind(cfreq, sfreq)
+
+          # out <- comb_tabs(tst[1:3, 1:3], rfreq)  # returns frequency part only!  This may be changed.
+
+          tab[1:3, 1:3] <- comb_tabs(tab[1:3, 1:3], rfreq)
+
+          return(tab)
+        }
+
+        ## Test:
+        f_from_pf(tst)
+
 
 
 ## D. Helper functions: --------------------------------
@@ -578,9 +613,26 @@ calc_tab <- function(tab) {
         }
           ## TODO: Note, this might be migrated to the outer function...
 
+    ## (A) Calculate frequencies from frequencies and probabilities: ----------------
+
+          ## Note: This is done first as:
+              ## - it may already indicate overspecification if results don't match and
+              ## - it then allows to potentially calculate all other frequencies.
+
+        ## TODO: Replace warning in comb tab by error message?
+
+        rtab <- f_from_pf(tab = tab)  # for rows.
+        ctab <- t(f_from_pf(tab = t(tab)))  # for columns (tranpose and retranspose).
+
+        tab <- comb_tabs(rtab, ctab)  # combine to table.
+
+        ## TODO: Check for problems (implement errors and try catch?)
+
+        ## Potential error message: Frequencies and probabilities do not match!
+        ## Also indicate conflicting cells!
 
 
-    ## (A) Calculate frequencies from frequencies: -----
+    ## (B) Calculate frequencies from frequencies: -----
 
       ftab_us <- tab[1:3, 1:3]  # get the user-specified frequency proportion.
 
@@ -600,7 +652,9 @@ calc_tab <- function(tab) {
 
       ## TODO: Test user input against calculated table?
 
-    ## (B) Calculate probabilities from frequencies: -------
+
+
+    ## (C) Calculate probabilities from frequencies: -------
 
       ## (1) Calculate probability table from frequencies.
       ## TODO: Check first, whether necessary or possible?
@@ -635,7 +689,7 @@ calc_tab <- function(tab) {
 
 
 
-    ## (C) Calculate probabilities from probabilities: -----
+    ## (D) Calculate probabilities from probabilities: -----
 
       ## (1) Calculate all possible probability complements: ------
         p_row <- compr_pcomp(p_row)
@@ -676,7 +730,7 @@ calc_tab <- function(tab) {
             stop(comp_const)
           }
 
-      ## HERE!!!###
+      ## TODO: HERE!!!###
       ## (2) Calculate missing probabilities from Bayes' theorem: ------
         ## For both directions test for inconsistent probabilities
         ## if the function throws an error, search for the reason to output an informative error message.
@@ -881,7 +935,7 @@ calc_tab <- function(tab) {
 
         }
 
-    ## (D) Mixed calculations -------------------
+    ## (E) Mixed calculations -------------------
         ## Calculate frequencies from relf:
 
         ## HERE!
@@ -957,14 +1011,15 @@ calc_tab <- function(tab) {
           }
 
 
-    ## (E) General consistency checks:
+    ## (F) General consistency checks:
 
+        ## TODO: Finish!
         ## (1) Test whether probabilities are complements:
           test_pcomp(p_row)
           test_pcomp(t(p_col))
 
 
-    ## (F) Finishing the table:----
+    ## (G) Finishing the table:----
 
         ## Reassemble tables:
           tab[1:3, 1:3] <- ftab
