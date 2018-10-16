@@ -445,8 +445,33 @@ library(riskyr)
 
           # out <- comb_tabs(tst[1:3, 1:3], rfreq)  # returns frequency part only!  This may be changed.
 
-          tab[1:3, 1:3] <- comb_tabs(tab[1:3, 1:3], rfreq)
+          ## Error if combining tabs does not work: ------------------
+            tab[1:3, 1:3] <- tryCatch({
+              ## Execute the function:
+              comb_tabs(tab[1:3, 1:3], rfreq)
+            },
+            ## If a warning occurs, throw an informative error message:
+            warning = function(w) {
+              warning(w)
 
+              comp <- tab[1:3, 1:3] != rfreq  # get comparison.
+              conf <- which(comp & !is.na(comp), arr.ind = TRUE)
+
+              ## TODO (Potential): if semantics are included, return also the cell name.
+
+              ## get conflicting cells:
+              cls <- apply(conf, 1, paste, collapse = ",")
+
+              ## Collapse cells of interest:
+              msg <- paste0("for cell(s) ",
+                            paste0("[", cls, "]", collapse = ", "))
+
+              ## Provide error message:
+              stop(paste0("Your input is overspecified.\nProbabilities and frequencies imply different values ",
+                          msg))
+            })
+
+          ## If everything is fine, return: -----------------------
           return(tab)
         }
 
