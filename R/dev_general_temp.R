@@ -603,10 +603,11 @@ tab <- test_p2
 
 calc_tab <- function(tab) {
 
-  ## (X) Preparations: -----
-    ## Get the dimensions:
+  ## (A) Preparations: -----
+    ## (a) Get and check the dimensions of the input: ---------
       n_row <- nrow(tab)
       n_col <- ncol(tab)
+
 
     ## Currently all calculations are implemented for a 2x2 frequency table + sums and probabilities (5x5) only!
     ## Throw an exception, if the table does not match:
@@ -626,7 +627,7 @@ calc_tab <- function(tab) {
       }
 
 
-      ## (c) Check for any NAs: -----
+    ## (b) Check, whether there are any NAs: -----
           mat_hlp <- matrix(TRUE, ncol = n_col, nrow = n_row)  # helper matrix where to check.
           mat_hlp[5, c(4, 5)] <- FALSE
           mat_hlp[4, 5] <- FALSE
@@ -638,26 +639,19 @@ calc_tab <- function(tab) {
         }
           ## TODO: Note, this might be migrated to the outer function...
 
-    ## (A) Calculate frequencies from frequencies and probabilities: ----------------
+  ## (B) Calculate frequencies from frequencies and probabilities: ----------------
 
           ## Note: This is done first as:
               ## - it may already indicate overspecification if results don't match and
               ## - it then allows to potentially calculate all other frequencies.
 
-        ## TODO: Replace warning in comb tab by error message?
+    ## Calculate frequencies from provided probabilities * frequencies :
+      rtab <- f_from_pf(tab = tab)  # for rows.
+      ctab <- t(f_from_pf(tab = t(tab)))  # for columns (tranpose and retranspose).
 
-        rtab <- f_from_pf(tab = tab)  # for rows.
-        ctab <- t(f_from_pf(tab = t(tab)))  # for columns (tranpose and retranspose).
+      tab <- comb_tabs(rtab, ctab)  # combine to table.
 
-        tab <- comb_tabs(rtab, ctab)  # combine to table.
-
-        ## TODO: Check for problems (implement errors and try catch?)
-
-        ## Potential error message: Frequencies and probabilities do not match!
-        ## Also indicate conflicting cells!
-
-
-    ## (B) Calculate frequencies from frequencies: -----
+  ## (C) Calculate frequencies from frequencies: -----
 
       ftab_us <- tab[1:3, 1:3]  # get the user-specified frequency proportion.
 
@@ -675,13 +669,13 @@ calc_tab <- function(tab) {
       ## Note: Even without any frequencies a decent table may be provided by calculating an N!
 
 
-      ## TODO: Test user input against calculated table?
+      ## TODO: Test user input against calculated table?  Should have happened in the previous step?
 
 
 
     ## (C) Calculate probabilities from frequencies: -------
 
-      ## (1) Calculate probability table from frequencies.
+      ## (1) Calculate probability table from frequencies. ----
       ## TODO: Check first, whether necessary or possible?
         p_tabs <- p_from_f(ftab)  # get probability information from the frequency table.
 
