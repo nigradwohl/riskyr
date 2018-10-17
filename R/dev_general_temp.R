@@ -599,6 +599,7 @@ tab <- test_p2
         # calc_tab(test_p3)
 
 
+
 ## D. Full function: --------------------------------
 
 calc_tab <- function(tab) {
@@ -608,36 +609,57 @@ calc_tab <- function(tab) {
       n_row <- nrow(tab)
       n_col <- ncol(tab)
 
-
     ## Currently all calculations are implemented for a 2x2 frequency table + sums and probabilities (5x5) only!
-    ## Throw an exception, if the table does not match:
-      if(!all(c(n_row, n_col) == c(5, 5))) {
+      ## Throw an exception, if the table does not match:
+        if(!all(c(n_row, n_col) == c(5, 5))) {
 
-        ## Create matrix for display:
-          mt1 <- matrix(c(rep("freq", 9), rep("prob", 6)), ncol = 5)
-          mt2 <- matrix(c(rep("prob", 7), rep(" NA ", 3)), ncol = 5)
-          mt <- rbind(mt1, mt2)
+          ## Create matrix for display:
+            mt1 <- matrix(c(rep("freq", 9), rep("prob", 6)), ncol = 5)
+            mt2 <- matrix(c(rep("prob", 7), rep(" NA ", 3)), ncol = 5)
+            mt <- rbind(mt1, mt2)
 
-          mt_rnd <- paste0(apply(mt, 1, paste0, collapse = " | "), collapse = "\n")  # rendered table.
+            mt_rnd <- paste0(apply(mt, 1, paste0, collapse = " | "), collapse = "\n")  # rendered table.
 
-          ## Some additional text:
-          errtxt <- "Table dimensions do not fit.  I need a 5x5 table of the following form:"
+            ## Some additional text:
+            errtxt <- "Table dimensions do not fit.  I need a 5x5 table of the following form:"
 
-          stop(paste0(errtxt, "\n\n", mt_rnd, "\n\n(Some values may still be NA)"))
-      }
+            stop(paste0(errtxt, "\n\n", mt_rnd, "\n\n(Some values may be NA)"))
+        }
 
 
-    ## (b) Check, whether there are any NAs: -----
+    ## (b) Check, whether there are any or only NAs: -----
+
+        ## Note, that some cells are NA by default!
+
           mat_hlp <- matrix(TRUE, ncol = n_col, nrow = n_row)  # helper matrix where to check.
           mat_hlp[5, c(4, 5)] <- FALSE
           mat_hlp[4, 5] <- FALSE
           na_log <- is.na(tab) & mat_hlp  # get matrix of NAs overall.
 
-        ## If there are no NAs in the releavant portion, return the table:
-        if (!any(na_log)) {
-          return(tab)  # return, if table is already complete.
-        }
-          ## TODO: Note, this might be migrated to the outer function...
+        ## If there are no NAs in the relevant portion, return the table:
+          if (!any(na_log)) {
+            return(tab)  # return, if table is already complete.
+          }
+
+        ## If no values have been provided:
+          if(all(na_log)) {
+
+            ## Create matrix for display:
+              mt1 <- matrix(c(rep("freq", 9), rep("prob", 6)), ncol = 5)
+              mt2 <- matrix(c(rep("prob", 7), rep(" NA ", 3)), ncol = 5)
+              mt <- rbind(mt1, mt2)
+
+              mt_rnd <- paste0(apply(mt, 1, paste0, collapse = " | "), collapse = "\n")  # rendered table.
+
+            ## Some additional text:
+              errtxt <- "No values have been provided.  I need a 5x5 table of the following form:"
+
+            ## thow exception:
+              stop(paste0(errtxt, "\n\n", mt_rnd, "\n\n(Some values may be NA)"))
+
+          }
+
+
 
   ## (B) Calculate frequencies from frequencies and probabilities: ----------------
 
@@ -649,64 +671,51 @@ calc_tab <- function(tab) {
       rtab <- f_from_pf(tab = tab)  # for rows.
       ctab <- t(f_from_pf(tab = t(tab)))  # for columns (tranpose and retranspose).
 
+      ## TODO: New problem: calculation of freqs from probs may require rounding!
+
       tab <- comb_tabs(rtab, ctab)  # combine to table.
 
-  ## (C) Calculate frequencies from frequencies: -----
+      ## TODO:  Here also errors due to inconsistency can occur!
 
-      ftab_us <- tab[1:3, 1:3]  # get the user-specified frequency proportion.
+  ## (C) Calculate frequencies from frequencies: --------
 
-      all_na_ftab <- all(is.na(ftab_us))  # are any frequencies provided?
+      ftab_us <- tab[1:3, 1:3]  # get the frequency proportion of the table.
 
-      ## If any frequencies are provided, start the calculation:
-      if(!all_na_ftab) {
-        ftab <- comp_ftab(ftab_us)  # calculate the frequency table.
-      } else {
-
-        ftab <- ftab_us  # othewise create an NA-table.
-        anyf <- FALSE  # flag for not having provided any frequencies.
-      }
+      ftab <- comp_ftab(ftab_us)  # calculate the frequency table.
 
       ## Note: Even without any frequencies a decent table may be provided by calculating an N!
 
+      ## TODO: Still flag for non-provided probabilities?
 
-      ## TODO: Test user input against calculated table?  Should have happened in the previous step?
+  ## (D) Calculate probabilities from frequencies: -------
 
+      p_tabs <- p_from_f(ftab)  # get probability information from the frequency table.
+        ## Will output all NAs, if no frequncies have been provided.
 
+    ## Assemble with probability table provided by the user:
+      p_row_us <- tab[1:3, 4:5]  # get row probability table.
+      p_col_us <- tab[4:5, 1:3]  # get column probabiilty table.
 
-    ## (C) Calculate probabilities from frequencies: -------
+    ## Combine the matrices and capture inconsistencies:
+      ## For row probabilities:
+      p_row <- tryCatch({
+          ## Execute the function:
+          comb_tabs(p_tabs$p_row, p_row_us)
+        },
+        ## If a warning occurs, throw an informative error message:
+        warning = function(w) {
+          message(w)
+          stop("Provided frequencies imply probabilities different from provided probabilities. ")
+        })
 
-      ## (1) Calculate probability table from frequencies. ----
-      ## TODO: Check first, whether necessary or possible?
-        p_tabs <- p_from_f(ftab)  # get probability information from the frequency table.
-
-      ## Assemble with probability table provided by the user:
-        p_row_us <- tab[1:3, 4:5]  # get row probability table.
-        p_col_us <- tab[4:5, 1:3]  # get column probabiilty table.
-
-  ## TODO: Hook in here and change the input!
-
-      ## Combine the matrices:
-
-        ## Capture inconsistencies using tryCatch():
-          p_row <- tryCatch({
-            ## Execute the function:
-            comb_tabs(p_tabs$p_row, p_row_us)
-            },
-            ## If a warning occurs, throw an informative error message:
-            warning = function(w) {
-              message(w)
-              stop("Provided frequencies imply probabilities different from provided probabilities. ")
-            })
-
-          p_col <- tryCatch({
-            comb_tabs(p_tabs$p_col,  p_col_us)
-            },
-            warning = function(w) {
-             message(w)
-              stop("Provided frequencies imply probabilities different from provided probabilities. ")
-              })
-
-
+      ## For col probabilities:
+      p_col <- tryCatch({
+          comb_tabs(p_tabs$p_col,  p_col_us)
+        },
+        warning = function(w) {
+          message(w)
+          stop("Provided frequencies imply probabilities different from provided probabilities. ")
+        })
 
     ## (D) Calculate probabilities from probabilities: -----
 
