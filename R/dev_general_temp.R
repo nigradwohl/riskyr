@@ -722,7 +722,7 @@ calc_tab <- function(tab) {
 
       ## Check output:
       rsum <- isTRUE(all.equal(rowSums(ftab[, 1:2]), ftab[, 3]))
-      csum <- isTRUE(all.equal(colSums(ftab[1:2, ]) == ftab[3, ]))
+      csum <- isTRUE(all.equal(colSums(ftab[1:2, ]), ftab[3, ]))
 
       ## Catch any inconsistent sums in the table:
       if(any(!c(rsum, csum) & !is.na(c(rsum, csum)))) {
