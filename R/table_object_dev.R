@@ -113,12 +113,18 @@ riskyr <- function(scen.lbl = "",  ## WAS: txt$scen.lbl,
                           nrow = 5, ncol = 5)
 
   ## Bind into one object:
-  object <- list(numeric = numeric,  # slot for all numeric content (how to split for different types?)
+  object <- list(numeric = list(
+                            dim1_2 = numeric1,
+                            dim1_3 = numeric2,
+                            dim2_3 = numeric3
+                          ),  # slot for all numeric content (how to split for different types?)
 
-            vars = cnd_dec_var,  # slot for variable names to access elements
-            global_labels = list(scen.lbl = scen.lbl, scen.lng = scen.lng, scen.txt = scen.txt,
+                 ## TODO: Use specific or generic names in the object?
+                 ## I currently seem to have solved a rather generic case...
+                vars = cnd_dec_var,  # slot for variable names to access elements
+                global_labels = list(scen.lbl = scen.lbl, scen.lng = scen.lng, scen.txt = scen.txt,
                                  popu.lbl = popu.lbl, cond.lbl = cond.lbl),  # labels not pertaining to cells.
-            source = list(scen.src = scen.src, scen.apa = scen.apa)  # source info.
+                source = list(scen.src = scen.src, scen.apa = scen.apa)  # source info.
             )
 
   # object <- list(scen.lbl = scen.lbl, scen.lng = scen.lng, scen.txt = scen.txt,
