@@ -33,8 +33,8 @@ riskyr <- function(scen.lbl = "",  ## WAS: txt$scen.lbl,
   cnd_dec_var <- matrix(c("hi", "mi", "cond.true", "sens", "FPR",
                           "fa", "cr", "cond.false", "FNR", "spec",
                           "dec.pos", "dec.neg", "N", "ppod", "pned",  # pned: proportion negative decisions.
-                          "PPV", "FOR", "prev", "acc", NA,
-                          "FDR", "NPV", "nprev", NA, NA),
+                          "PPV", "FOR", "prev", "acc", "",
+                          "FDR", "NPV", "nprev", "", ""),
                         ## TODO: Find good variable names for the missing quantities.
                         nrow = 5, ncol = 5)
 
@@ -42,8 +42,8 @@ riskyr <- function(scen.lbl = "",  ## WAS: txt$scen.lbl,
   cnd_dec_lab <- matrix(c(hi.lbl, mi.lbl, cond.true.lbl, "sens", "FPR",
                       fa.lbl, cr.lbl, cond.false.lbl, "FNR", "spec",
                       dec.pos.lbl, dec.neg.lbl, "N", "ppod", "1-ppod",
-                      "PPV", "FOR", "prev", "acc", NA,
-                      "FDR", "NPV", "1-prev", NA, NA),
+                      "PPV", "FOR", "prev", "acc", "",
+                      "FDR", "NPV", "1-prev", "", ""),
                     nrow = 5, ncol = 5)
 
   ## TODO: Here we need reasonable defaults, but should allow users to customize!
@@ -83,8 +83,8 @@ riskyr <- function(scen.lbl = "",  ## WAS: txt$scen.lbl,
     cnd_acc_var <- matrix(c("hi", "mi", "cond.true", "sens", "FPR",
                             "cr", "fa", "cond.false", "spec", "FNR",
                             "cor", "inc", "N", "acc", "err",  # pned: proportion negative decisions.
-                            "hi.cor", "mi.err", "prev", "ppod", NA,
-                            "cr.cor", "fa.err", "nprev", NA, NA),
+                            "hi.cor", "mi.err", "prev", "ppod", "",
+                            "cr.cor", "fa.err", "nprev", "", ""),
                           ## TODO: Find good variable names for the missing quantities.
                           nrow = 5, ncol = 5)
 
@@ -107,8 +107,8 @@ riskyr <- function(scen.lbl = "",  ## WAS: txt$scen.lbl,
     dec_acc_var <- matrix(c("hi", "fa", "dec.yes", "PPV", "FOR",
                             "cr", "mi", "dec.no", "NPV", "FDR",
                             "cor", "inc", "N", "acc", "err",  # pned: proportion negative decisions.
-                            "hi.cor", "fa.err", "ppod", "prev", NA,
-                            "cr.cor", "mi.err", "pned", NA, NA),
+                            "hi.cor", "fa.err", "ppod", "prev", "",
+                            "cr.cor", "mi.err", "pned", "", ""),
                           ## TODO: Find good variable names for the missing quantities.
                           nrow = 5, ncol = 5)
 
@@ -116,7 +116,7 @@ riskyr <- function(scen.lbl = "",  ## WAS: txt$scen.lbl,
   ## TODO: Decide where to put numeric and related label info.  Current idea:
         ## - one list for each dimension (numeric, vars, labels)
         ## - global dictionary, which dimension is which? (alternatively: by order)
-        ## - plus: global attributes; including colors for specific variables
+        ## - plus: global attributes; including colors for specific variables (color scheme); potentially labels
 
   ## Bind into one object:
   object <- list(numeric = list(
