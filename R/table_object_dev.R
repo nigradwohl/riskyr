@@ -67,20 +67,52 @@ riskyr <- function(scen.lbl = "",  ## WAS: txt$scen.lbl,
 
     ## TODO: In which order to calculate the tables?
 
-  ## Calculate dim1 (cnd) and dim 3 (acc)
+  ## Calculate dim1 (cnd) and dim 3 (acc) --------------------------
     num_mat2 <- matrix(NA,
                       nrow = 5, ncol = 5
     )
-    num_mat2[3, 4] <- numeric1[[1]][4, 4]  # enter accuracy instead of prevalence.
-    num_mat2[4, 1:2] <- numeric1[[1]][4, 1:2]  # enter spec and fart.
+    #num_mat2[4, 3] <- numeric1[[1]][4, 4]  # enter accuracy instead of ppod.
+    num_mat2[3, 4] <- numeric1[[1]][3, 4]  # enter prevalence (needed, so that the table is specified!).
+    num_mat2[4, 1:2] <- diag(numeric1[[1]][c(4, 5), c(1, 2)])  # enter sens and spec (note, that this reverses the columns!).
     num_mat2[3, 3] <- numeric1[[1]][3, 3]  # enter N; CAUTION: may not always work.
 
     numeric2 <- calc_tab(num_mat2)  # calculate dim 3 (acc).
 
-    ## What is what?
+    ## Important: Columnns need to be reveactually the reversal is sufficient to do the trick!
+
+    cnd_acc_var <- matrix(c("hi", "mi", "cond.true", "sens", "FPR",
+                            "cr", "fa", "cond.false", "spec", "FNR",
+                            "cor", "inc", "N", "acc", "err",  # pned: proportion negative decisions.
+                            "hi.cor", "mi.err", "prev", "ppod", NA,
+                            "cr.cor", "fa.err", "nprev", NA, NA),
+                          ## TODO: Find good variable names for the missing quantities.
+                          nrow = 5, ncol = 5)
 
   ## TODO (in calc tab) name table types.
 
+  ## Calculate dim 2 (dec) and dim 3 (acc):
+    num_mat3 <- matrix(NA,
+                       nrow = 5, ncol = 5
+    )
+
+    tnum1 <- t(numeric1[[1]])  # transpose whole table!
+    t(cnd_dec_var)  # for testing: transposed variables.
+
+    num_mat3[3, 4] <- tnum1[3, 4]  # enter ppod (needed, so that the table is specified!).
+    num_mat3[4, 1:2] <- diag(tnum1[c(4, 5), c(1, 2)])  # enter PPV and NPV (note, that this reverses the columns!).
+    num_mat3[3, 3] <- tnum1[3, 3]  # enter N; CAUTION: may not always work.
+
+    numeric3 <- calc_tab(num_mat3)  # calculate dim 3 (acc).
+
+    dec_acc_var <- matrix(c("hi", "fa", "dec.yes", "PPV", "FOR",
+                            "cr", "mi", "dec.no", "NPV", "FDR",
+                            "cor", "inc", "N", "acc", "err",  # pned: proportion negative decisions.
+                            "hi.cor", "fa.err", "ppod", "prev", NA,
+                            "cr.cor", "mi.err", "pned", NA, NA),
+                          ## TODO: Find good variable names for the missing quantities.
+                          nrow = 5, ncol = 5)
+
+  ## Bind into one object:
   object <- list(numeric = numeric,  # slot for all numeric content (how to split for different types?)
 
             vars = cnd_dec_var,  # slot for variable names to access elements
