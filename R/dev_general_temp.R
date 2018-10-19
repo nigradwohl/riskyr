@@ -792,9 +792,9 @@ calc_tab <- function(tab) {
           stop("Provided frequencies imply probabilities different from provided probabilities. ")
         })
 
-    ## (D) Calculate probabilities from probabilities: -----
+  ## (D) Calculate probabilities from probabilities: -----
 
-      ## (1) Calculate all possible probability complements: ------
+    ## (1) Calculate all possible probability complements: ------
         p_row <- compr_pcomp(p_row)
         p_col <- compr_pcomp(p_col, transpose = TRUE)
           ## transpose to use row function for columns.
@@ -834,11 +834,11 @@ calc_tab <- function(tab) {
           }
 
       ## TODO: HERE!!!###
-      ## (2) Calculate missing probabilities from Bayes' theorem: ------
+    ## (2) Calculate missing probabilities from Bayes' theorem: ------
         ## For both directions test for inconsistent probabilities
         ## if the function throws an error, search for the reason to output an informative error message.
 
-        ## (a) Calculation from the direction of the row-table: -----
+      ## (a) Calculation from the direction of the row-table: -----
           relfr <- tryCatch({
 
             ## Try to calculate the probability tables:
@@ -887,7 +887,7 @@ calc_tab <- function(tab) {
 
             })  # end testing relfr.
 
-        ## (b) Calculation from the direction of the column-table: -----
+      ## (b) Calculation from the direction of the column-table: -----
           relfc <- tryCatch({
 
             ## Try to calculate the probability tables:
@@ -944,7 +944,7 @@ calc_tab <- function(tab) {
             ## TODO: Do these problems always coincide with negative values? Probably yes!
 
 
-        ## (c) Testing the results: ------------------------------------
+      ## (c) Testing the results: ------------------------------------
         ## TODO!
         ## Test results for consistency:
             ## Potential problems:
@@ -954,7 +954,7 @@ calc_tab <- function(tab) {
 
         ## Note: is.logical() does not work for testing, as it encounters a list both times!
 
-          ## (i) Test whether the table can be calculated from at least one direction: ------
+        ## (i) Test whether the table can be calculated from at least one direction: ------
             ## For testing use output length!
             lenr <- length(relfr) == 1
             lenc <- length(relfc) == 1
@@ -999,7 +999,7 @@ calc_tab <- function(tab) {
 
               ## If at least one table can be calculated, continue:
 
-          ## (ii) Given that both tables could be calculated test and combine them: --------
+        ## (ii) Given that both tables could be calculated test and combine them: --------
             if (!any(lenr, lenc)) {
 
               ## Compare them:
@@ -1049,7 +1049,7 @@ calc_tab <- function(tab) {
 
         if(is.na(N)) {  # if no N was provided
 
-          if (all_na_ftab) {  # test, whether any frequency was provided, if not:
+          if (all(is.na(otab[1:3, 1:3]))) {  # test, whether any frequency was provided, if not:
 
             ## Note, that this case seems very unlikely...
 
