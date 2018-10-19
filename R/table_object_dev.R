@@ -50,18 +50,34 @@ riskyr <- function(scen.lbl = "",  ## WAS: txt$scen.lbl,
 
 
   ## (0): Initialize some stuff: ------
-  num_mat <- matrix(c(hi, mi, hi+mi, sens, NA,
-                      fa, cr, fa+cr, fart, spec,
-                      hi+fa, mi+cr, N, ppod, NA,
-                      NA, NA, prev, NA, NA,
-                      NA, NA, NA, NA, NA,
-                      NA, NA, NA, NA, NA),
-                    nrow = 5, ncol = 5
-                    )
+  ## Basic: dim 1 (cnd) and dim 2 (dec)
+    num_mat1 <- matrix(c(hi, mi, hi+mi, sens, NA,
+                        fa, cr, fa+cr, fart, spec,
+                        hi+fa, mi+cr, N, ppod, NA,
+                        NA, NA, prev, NA, NA,
+                        NA, NA, NA, NA, NA,
+                        NA, NA, NA, NA, NA),
+                      nrow = 5, ncol = 5
+                      )
 
-  ## TODO: Provide inputs for composite variables!
+    ## TODO: Provide inputs for composite variables!
 
-  numeric <- calc_tab(num_mat)  # calculate the table object (maybe use try catch?)
+
+    numeric1 <- calc_tab(num_mat1)  # calculate the table object (maybe use try catch?)
+
+    ## TODO: In which order to calculate the tables?
+
+  ## Calculate dim1 (cnd) and dim 3 (acc)
+    num_mat2 <- matrix(NA,
+                      nrow = 5, ncol = 5
+    )
+    num_mat2[3, 4] <- numeric1[[1]][4, 4]  # enter accuracy instead of prevalence.
+    num_mat2[4, 1:2] <- numeric1[[1]][4, 1:2]  # enter spec and fart.
+    num_mat2[3, 3] <- numeric1[[1]][3, 3]  # enter N; CAUTION: may not always work.
+
+    numeric2 <- calc_tab(num_mat2)  # calculate dim 3 (acc).
+
+    ## What is what?
 
   ## TODO (in calc tab) name table types.
 
@@ -156,6 +172,9 @@ riskyr_gen <- function(x,  # some input: table, list of frequencies / probs, gen
                        ## Dimension names of the table; defaults to diagnostic case (necessary?).
                        dim1 = "cnd",
                        dim2 = "dec",
-                       dim3 = "acc",
+                       dim3 = "acc"
                         ## Potentially also include labels.
-                       )
+){
+
+}
+
