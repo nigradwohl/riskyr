@@ -145,3 +145,17 @@ tst <- riskyr(hi = 1, mi = 3, fa = 4, cr = 5)
 
 summary(tst, relf = TRUE)  # summary now returns the source info (obviously this is just a test).
 cite(tst)  # cite now returns source information (also for object of class riskyr.diagnostic, inheriting riskyr)!
+
+
+
+### Skeleton for a general function: --------------------------------
+
+riskyr_gen <- function(x,  # some input: table, list of frequencies / probs, generically named parameters.
+                       info,  # scenario information (probably several parameters.)
+                       type = "diagnostic",  # overall type ("generic", "treatment", ...). Controls methods.
+                       ## Dimension names of the table; defaults to diagnostic case (necessary?).
+                       dim1 = "cnd",
+                       dim2 = "dec",
+                       dim3 = "acc",
+                        ## Potentially also include labels.
+                       )
