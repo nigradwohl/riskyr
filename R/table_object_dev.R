@@ -127,7 +127,10 @@ riskyr <- function(scen.lbl = "",  ## WAS: txt$scen.lbl,
 
                  ## TODO: Use specific or generic names in the object?
                  ## I currently seem to have solved a rather generic case...
-                vars = cnd_dec_var,  # slot for variable names to access elements
+                vars = list(  # slot for variable names to access elements
+                  cnd_dec_var = cnd_dec_var,
+                  cnd_acc_var = cnd_acc_var,
+                  dec_acc_var = dec_acc_var),
                 global_labels = list(scen.lbl = scen.lbl, scen.lng = scen.lng, scen.txt = scen.txt,
                                  popu.lbl = popu.lbl, cond.lbl = cond.lbl),  # labels not pertaining to cells.
                 source = list(scen.src = scen.src, scen.apa = scen.apa)  # source info.
@@ -186,13 +189,20 @@ setMethod("cite", signature = "riskyr",
 
 ## Overwrite the summary method to obtain a summary of the table:
 setMethod("summary", signature = c("riskyr.diagnostic"),
-          definition = function(object, relf = FALSE){
+          definition = function(object, dims  = "cd", relf = FALSE){
+
+            if(dims == "cd") ix_dim <- 1
+            if(dims == "ca") ix_dim <- 2
+            if(dims == "da") ix_dim <- 3
+
+            ## TODO: Allow the transposed forms as well.
 
             ix <- ifelse(relf, 2, 1)  # decide whether to report relative frequencies.
 
-            nums <- round(object$numeric[[ix]], 2)
-            vars <- object$vars
-            out <- paste0(vars, " = ", nums)
+            nums <- round(object$numeric[[ix_dim]][[ix]], 2)
+            vars <- object$vars[[ix_dim]]
+            vars[is.na(vars)] <- ""
+            out <- matrix(paste0(vars, " = ", nums), nrow = 5, ncol = 5)
 
             head <- ifelse(relf, "relf", "freq")
             cat(head, "\n")
@@ -203,10 +213,39 @@ setMethod("summary", signature = c("riskyr.diagnostic"),
 ## Test the class and method:
 tst <- riskyr(hi = 1, mi = 3, fa = 4, cr = 5)
 
-summary(tst, relf = TRUE)  # summary now returns the source info (obviously this is just a test).
+(smr <- summary(tst, dims = "da", relf = FALSE))  # summary now returns the source info (obviously this is just a test).
 cite(tst)  # cite now returns source information (also for object of class riskyr.diagnostic, inheriting riskyr)!
 
+nice_tab <- function(smr, space = 2) {  # TODO: Give object class summary.
 
+  max_nchar <- max(nchar(smr))
+  padding <- paste0(rep(" ", space), collapse = "")  # repeat for padding.
+  cellwd <- max_nchar + space * 2  # cellwidth.
+
+  ## Prolong each cell to max (repeat for each cell and collapse):
+  naddspace <- c(max_nchar - nchar(smr))  # get the number of spaces to add.
+  addspace <- sapply(naddspace, function(x) {paste0(rep(" ", times = x), collapse = "")})
+
+  pad_vec <- rep(padding, length(smr))
+  pad_vec[1] <- paste0(padding, " ", collapse = "")
+
+  cells <- paste0(pad_vec, smr, addspace, padding)
+  mcells <- matrix(cells, nrow = 5, ncol = 5)  # bring back to form.
+
+  ctab <- paste0(apply(mcells, 1, paste0, collapse = "|"), "\n")  # only with colseps.
+
+  csep <- paste0(rep("-", cellwd), collapse  = "")  # horizontal separator for each cell.
+  hsep <- paste0(paste0(rep(csep, 5), collapse = "|"), "\n")  # horizontal separator.
+
+  tab <- rbind(ctab, rep(hsep, length(ctab)))
+
+  cat(tab)
+
+
+  ## TODO: Add headers!
+  ## TODO: First row is off; maybe due to the \n separator.
+
+}
 
 ### Skeleton for a general function: --------------------------------
 
