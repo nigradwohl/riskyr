@@ -443,6 +443,9 @@ library(riskyr)
           ## Bind and combine:
           rfreq <- cbind(cfreq, sfreq)
 
+          ## TODO:
+          ## ISSUE: Round frequencies / throw an error/warning if they are not integer / just leave it.
+
           # out <- comb_tabs(tst[1:3, 1:3], rfreq)  # returns frequency part only!  This may be changed.
 
           ## Error if combining tabs does not work: ------------------
@@ -604,8 +607,10 @@ tab <- test_p2
 
 calc_tab <- function(tab) {
 
+  otab <- tab  # save original input.
+
   ## (A) Preparations: -----
-    ## (a) Get and check the dimensions of the input: ---------
+    ## (1) Get and check the dimensions of the input: ---------
       n_row <- nrow(tab)
       n_col <- ncol(tab)
 
@@ -627,7 +632,7 @@ calc_tab <- function(tab) {
         }
 
 
-    ## (b) Check, whether there are any or only NAs: -----
+    ## (2) Check, whether there are any or only NAs: -----
 
         ## Note, that some cells are NA by default!
 
@@ -672,10 +677,40 @@ calc_tab <- function(tab) {
       ctab <- t(f_from_pf(tab = t(tab)))  # for columns (tranpose and retranspose).
 
       ## TODO: New problem: calculation of freqs from probs may require rounding!
+      ## How to proceed? Loss of precision resulting in errors possible; relative frequencies as solution?
+      ## Intuition: Non-integer frequencies are a kind of misspecification and should cause an error
+        ## But: interest in cases with known probabilities...
 
-      tab <- comb_tabs(rtab, ctab)  # combine to table.
+      ## Test case (frombelow):
+        ## tst_smp[1,1] <- NA
 
-      ## TODO:  Here also errors due to inconsistency can occur!
+      tab <- tryCatch({   #define output table.
+        comb_tabs(rtab, ctab)  # combine to table.
+      },
+      warning = function(w) {
+        message(w)
+
+        ## Get conflicting cell(s):
+        neql <- rtab != ctab  # test inequality.
+        conf <- which(neql & !is.na(neql), arr.ind = TRUE)
+
+        ## TODO (Potential): if semantics are included, return also the cell name.
+
+        ## get conflicting cells:
+        cls <- apply(conf, 1, paste, collapse = ",")
+
+        ## Collapse cells of interest:
+        msg <- paste0("for cell(s) ",
+                      paste0("[", cls, "]", collapse = ", "))
+
+        ## Provide error message:
+        stop(paste0("Your input is overspecified.\nRow and column probabilities imply different values ",
+                    msg))
+      }
+      )
+
+      ## Here also errors due to inconsistency can occur!
+      ## Test case: tst_smp
 
   ## (C) Calculate frequencies from frequencies: --------
 
@@ -685,7 +720,47 @@ calc_tab <- function(tab) {
 
       ## Note: Even without any frequencies a decent table may be provided by calculating an N!
 
-      ## TODO: Still flag for non-provided probabilities?
+      ## Check output:
+      rsum <- isTRUE(all.equal(rowSums(ftab[, 1:2]), ftab[, 3]))
+      csum <- isTRUE(all.equal(colSums(ftab[1:2, ]) == ftab[3, ]))
+
+      ## Catch any inconsistent sums in the table:
+      if(any(!c(rsum, csum) & !is.na(c(rsum, csum)))) {
+
+        ## Your inputs in row / col imply a different frequency for cell...
+        ## But: already calculated frequencies from probs... test both?
+
+        ## Test user input frequencies:
+          conftab <- comp_ftab(otab)
+
+          rsum <- which(rowSums(conftab[, 1:2]) != conftab[, 3])
+          csum <- which(colSums(conftab[1:2, ]) != conftab[3, ])
+
+          ## TODO: Test for NA!
+
+          conf_row <- ifelse(length(rsum) > 0,
+                             paste0("for row ", rsum, collapse = ", "),
+                             "")
+          conf_col <- ifelse(length(csum) > 0,
+                             paste0("for column ", csum, collapse = ", "),
+                             "")
+
+          if(nchar(conf_row) > 0 | nchar(conf_col) > 0) {  # if either applies:
+
+            sep <- ifelse(nchar(conf_row) > 0 && nchar(conf_col) > 0, " and ", "")  # set separator.
+
+            stop("Your frequency input is inconsistent.  It implies different frequencies ",
+                 paste(conf_row, conf_col, sep = sep), ".")
+          }
+
+        ## Test frequencies already derived from probabilities otherwise:
+          ## Test case:
+            ## tst_smp[1,1] <- NA; tst_smp[2,1] <- 10
+
+          ## I am not sure, whether this can even occur!  I din't manage to produce this error so far!
+          stop("The probabilities and frequencies you specified imply different frequencies.  Please check your inputs.")
+
+      }
 
   ## (D) Calculate probabilities from frequencies: -------
 
