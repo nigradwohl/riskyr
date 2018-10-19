@@ -721,8 +721,18 @@ calc_tab <- function(tab) {
       ## Note: Even without any frequencies a decent table may be provided by calculating an N!
 
       ## Check output:
-      rsum <- isTRUE(all.equal(rowSums(ftab[, 1:2]), ftab[, 3]))
-      csum <- isTRUE(all.equal(colSums(ftab[1:2, ]), ftab[3, ]))
+      ## CONTINUE HERE!
+      ## TODO: Here the function stumbles across probabilities and one frequency only!
+      ## This is due to NA values not being equal to the sums.  Use comb_tabs and tryCatch?
+        # comb_tabs(rowSums(ftab[, 1:2]), ftab[, 3])
+        # comb_tabs(colSums(ftab[1:2, ]), ftab[3, ])
+
+      rsum <- rowSums(ftab[, 1:2])
+      csum <- colSums(ftab[1:2, ])  # columns.
+
+      ## Check only non-NA cells (where any sums are):
+      rtst <- isTRUE(all.equal(rsum[!is.na(rsum)], ftab[, 3][!is.na(rsum)]))  # rows.
+      ctst <- isTRUE(all.equal(csum[!is.na(csum)], ftab[3, ][!is.na(csum)]))  # columns
 
       ## Catch any inconsistent sums in the table:
       if(any(!c(rsum, csum) & !is.na(c(rsum, csum)))) {
@@ -758,9 +768,11 @@ calc_tab <- function(tab) {
             ## tst_smp[1,1] <- NA; tst_smp[2,1] <- 10
 
           ## I am not sure, whether this can even occur!  I din't manage to produce this error so far!
-          stop("The probabilities and frequencies you specified imply different frequencies.  Please check your inputs.")
+          stop("TEST! The probabilities and frequencies you specified imply different frequencies.  Please check your inputs.")
 
       }
+
+
 
   ## (D) Calculate probabilities from frequencies: -------
 

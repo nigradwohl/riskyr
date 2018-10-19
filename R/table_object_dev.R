@@ -112,6 +112,12 @@ riskyr <- function(scen.lbl = "",  ## WAS: txt$scen.lbl,
                           ## TODO: Find good variable names for the missing quantities.
                           nrow = 5, ncol = 5)
 
+
+  ## TODO: Decide where to put numeric and related label info.  Current idea:
+        ## - one list for each dimension (numeric, vars, labels)
+        ## - global dictionary, which dimension is which? (alternatively: by order)
+        ## - plus: global attributes; including colors for specific variables
+
   ## Bind into one object:
   object <- list(numeric = list(
                             dim1_2 = numeric1,
