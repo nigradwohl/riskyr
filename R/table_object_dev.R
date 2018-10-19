@@ -118,18 +118,24 @@ setMethod("summary", signature = "riskyr",
           definition = function(object){return(round(object$numeric[[1]], 2))})
 
 
-## General riskyr method:
 
+## Overwrite the cite method to obtain source information:
 setMethod("cite", signature = "riskyr",
           definition = function(keys){return(keys$source)})
 
 
+## Overwrite the summary method to obtain a summary of the table:
 setMethod("summary", signature = c("riskyr.diagnostic"),
-          definition = function(object){
-            nums <- round(object$numeric[[1]], 2)
+          definition = function(object, relf = FALSE){
+
+            ix <- ifelse(relf, 2, 1)  # decide whether to report relative frequencies.
+
+            nums <- round(object$numeric[[ix]], 2)
             vars <- object$vars
             out <- paste0(vars, " = ", nums)
 
+            head <- ifelse(relf, "relf", "freq")
+            cat(head, "\n")
             return(out)
             })
 
@@ -137,5 +143,5 @@ setMethod("summary", signature = c("riskyr.diagnostic"),
 ## Test the class and method:
 tst <- riskyr(hi = 1, mi = 3, fa = 4, cr = 5)
 
-summary(tst)  # summary now returns the source info (obviously this is just a test).
+summary(tst, relf = TRUE)  # summary now returns the source info (obviously this is just a test).
 cite(tst)  # cite now returns source information (also for object of class riskyr.diagnostic, inheriting riskyr)!
