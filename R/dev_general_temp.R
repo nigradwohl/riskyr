@@ -666,6 +666,32 @@ calc_tab <- function(tab) {
 
 
 
+    ## (3) Test for non-probability inputs or non-integer frequencies: ---------------
+
+          ## Frequencies:
+            fs <- tab[(1:3), (1:3)]
+
+            ## Test for negative frequencies:
+            if(any(fs[!is.na(fs)] < 0)) {
+
+              stop("Found negative frequencies in input.  Please only specify positive frequencies. ")
+
+            }
+
+            ## Test for integers:
+            if(any(fs[!is.na(fs)] %% 1)) {
+
+              stop("Found non-integer frequencies.  Please only specify integer frequencies. ")
+            }
+
+          ## Probabilities:
+            ps <- c(tab[4:5, ], tab[, 4:5])
+
+            if(any(ps[!is.na(ps)] > 1 || ps[!is.na(ps)] < 0)) {
+
+              stop("Probabilities need to lie between 0 and 1. ")
+            }
+
   ## (B) Calculate frequencies from frequencies and probabilities: ----------------
 
           ## Note: This is done first as:
@@ -720,8 +746,31 @@ calc_tab <- function(tab) {
 
       ## Note: Even without any frequencies a decent table may be provided by calculating an N!
 
-      ## Check output:
-      ## CONTINUE HERE!
+      ## (1) Check output:
+
+      ## (a) Catch any negative frequencies:
+        negfreq <- ftab < 0
+
+        if(any(negfreq)) {
+
+          conf <- which(negfreq, arr.ind = TRUE)  # get indices for conflicting cells.
+
+          ## TODO (Potential): if semantics are included, return also the cell name.
+
+          ## get conflicting cells:
+          cls <- apply(conf, 1, paste, collapse = ",")
+
+          ## Collapse cells of interest:
+          msg <- paste0("for cell ",
+                        paste0("[", cls, "]", collapse = ", "))
+
+          ## Provide error message:
+          stop(paste0("Your inputs imply negative frequencies ", msg, "\nPlease revise your inputs. "))
+
+        }
+
+        ## TODO: Also catch non-integer frequencies?
+
       ## TODO: Here the function stumbles across probabilities and one frequency only!
       ## This is due to NA values not being equal to the sums.  Use comb_tabs and tryCatch?
         # comb_tabs(rowSums(ftab[, 1:2]), ftab[, 3])
@@ -734,7 +783,7 @@ calc_tab <- function(tab) {
       rtst <- isTRUE(all.equal(rsum[!is.na(rsum)], ftab[, 3][!is.na(rsum)]))  # rows.
       ctst <- isTRUE(all.equal(csum[!is.na(csum)], ftab[3, ][!is.na(csum)]))  # columns
 
-      ## Catch any inconsistent sums in the table:
+      ## (b) Catch any inconsistent sums in the table:
       if(any(!c(rsum, csum) & !is.na(c(rsum, csum)))) {
 
         ## Your inputs in row / col imply a different frequency for cell...
@@ -759,7 +808,7 @@ calc_tab <- function(tab) {
 
             sep <- ifelse(nchar(conf_row) > 0 && nchar(conf_col) > 0, " and ", "")  # set separator.
 
-            stop("Your frequency input is inconsistent.  It implies different frequencies ",
+            stop("Your frequency input is inconsistent.  It implies differing frequencies ",
                  paste(conf_row, conf_col, sep = sep), ".")
           }
 
@@ -781,6 +830,19 @@ calc_tab <- function(tab) {
 
       p_tabs <- p_from_f(ftab)  # get probability information from the frequency table.
         ## Will output all NAs, if no frequncies have been provided.
+
+      ## Test for negative probabilities:
+      ## TODO: Is necessary, if catching negative frequencies?
+        # p_vec <- unlist(p_tabs)  # get vector.
+        # nprob_log <- any(p_vec < 0 | p_vec > 1)  # logical for non-probabilities.
+        #
+        # if(nprob_log) {
+        #
+        #   ## Inputs imply frequencies
+        #
+        #   ## TODO: Already capture negative frequencies above!
+        #
+        # }
 
     ## Assemble with probability table provided by the user:
       p_row_us <- tab[1:3, 4:5]  # get row probability table.
