@@ -768,9 +768,12 @@ calc_tab <- function(tab) {
             ## tst_smp[1,1] <- NA; tst_smp[2,1] <- 10
 
           ## I am not sure, whether this can even occur!  I din't manage to produce this error so far!
-          stop("TEST! The probabilities and frequencies you specified imply different frequencies.  Please check your inputs.")
+          stop("TEST! The probabilities and frequencies you specified imply different frequencies.
+               Please check your inputs.")
 
       }
+
+      ## TODO: Revisit!
 
 
 
@@ -994,7 +997,7 @@ calc_tab <- function(tab) {
                 ## Currently HERE !!! ##
 
               # stop("The information you specified is not sufficient to produce the table.
-              #      I need at leas one more input. ")
+              #      I need at least one more input. ")
 
               ## Alternatively:
                 warning("Cannot calculate the complete table from given frequencies and probabilities.\nI return everything possible."
