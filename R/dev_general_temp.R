@@ -1113,6 +1113,14 @@ calc_tab <- function(tab) {
         } else {  # if an N is avaliable use it:
 
             ftab2 <- f_from_rf(relf$rftab, N = N)
+
+            ## Potentially working solution:
+            marsum <- round(relf$rftab * N)  # get margin sums.
+            marsum[1:2, 1:2] <- NA  # ignore cell frequencies.
+
+            cf_row <- round(marsum[1:2, 3] * relf$prow[1:2, ])  # cell frequencies from rows.
+            cf_col <- t(round(t(marsum)[1:2, 3] * t(relf$pcol)[1:2, ]))  # cell frequencies from columns.
+
         }
 
           ## TODO: Test somewhere that summing up works (it does not necessarily! weird rounding?)
@@ -1121,21 +1129,9 @@ calc_tab <- function(tab) {
             ## This is what should happen:
               ## comp_freq(prev = ct[3,4], sens = ct[4,1], spec = ct[5,2], N = 100)
 
-            ## Potentially working solution:
-            # a <- relf$rftab * 100
-            #
-            # b <- a - floor(a)  # get decimal places.
-            #
-            #
-            # larger05 <- b > 0.5
-            #
-            # probRow <- rowSums(larger05[, 1:2]) > 1 & !larger05[, 3]  # problematic rows.
-            # probCol <- colSums(larger05[1:2,]) > 1 & !larger05[3, ]  # problematic columns.
-            #
-            # min_ix <- which.min(b[, 1:2][probRow, ])
-            #
-            # a[probRow][min_ix] <- floor(a[probRow][min_ix])
-            # round(a)
+            ## TO CONTINUE!
+
+
 
 
         ## Check provided frequencies for equality:
@@ -1153,13 +1149,45 @@ calc_tab <- function(tab) {
 
         ## TODO: Finish!
         ## (1) Test whether probabilities are complements:
-          test_pcomp(p_row)
-          test_pcomp(t(p_col))
+          prow_comp <- test_pcomp(p_row)
+          pcol_comp <- test_pcomp(t(p_col))
+
+          if(!prow_comp || !pcol_comp) {
+
+            ## Initialize empty messages:
+            rerr <- ""
+            cerr <- ""
+            seperr <- ""  #separator.
+
+            if(!prow_comp){
+
+              rix <- which(rowSums(p_row) != 1)  # row index.
+
+              ## Row error message:
+              rerr <- paste0(" in row ", paste0(rix, collapse = ", "))
+
+            }
+
+            if(!pcol_comp){
+              cix <- which(colSums(p_col) != 1)  # row index.
+
+              ## Row error message:
+              cerr <- paste0(" in column ", paste0(cix, collapse = ", "))
+            }
+
+            if(!prow_comp & !pcol_comp){
+              seperr <- " and "
+            }
+
+
+            stop(paste0("Probabilities", rerr, seperr, cerr, " do not add up to 1."))
+
+          }
 
 
     ## (G) Finishing the table:----
 
-        ## Reassemble tables:
+        ## Reassemble table parts:
           tab[1:3, 1:3] <- ftab
           tab[1:3, 4:5] <- relf$prow
           tab[4:5, 1:3] <- relf$pcol
