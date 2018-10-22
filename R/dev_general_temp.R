@@ -700,11 +700,11 @@ calc_tab <- function(tab) {
         cls <- apply(conf, 1, paste, collapse = ",")
 
         ## Collapse cells of interest:
-        msg <- paste0("for cell(s) ",
+        msg <- paste0("for cell ",
                       paste0("[", cls, "]", collapse = ", "))
 
         ## Provide error message:
-        stop(paste0("Your input is overspecified.\nRow and column probabilities imply different values ",
+        stop(paste0("Your input is overspecified.\nRow and column probabilities imply different frequencies ",
                     msg))
       }
       )
@@ -785,6 +785,8 @@ calc_tab <- function(tab) {
     ## Assemble with probability table provided by the user:
       p_row_us <- tab[1:3, 4:5]  # get row probability table.
       p_col_us <- tab[4:5, 1:3]  # get column probabiilty table.
+
+    ## TODO:Continue here:  Make informative!
 
     ## Combine the matrices and capture inconsistencies:
       ## For row probabilities:
@@ -1135,7 +1137,16 @@ calc_tab <- function(tab) {
 
 
         ## Check provided frequencies for equality:
-          ftab_eq <- ftab == ftab2
+          fna <- is.na(ftab) | is.na(ftab2)
+
+          ftab_eq <- isTRUE(all.equal(ftab[!fna], ftab2[!fna]))
+
+          ## TODO: Here errors occur due to insufficient (or too much) rounding.
+
+          ## Alternative without rounding:
+          ftab_eq <- isTRUE(all.equal(relf$rftab[!fna] * N, ftab[!fna]))  # use unrounded estimate.
+
+          ## TODO: This requires rounding after testing.
 
           if(!all(ftab_eq[!is.na(ftab_eq)])) {
            stop("Frequencies calculated from probabilities do not match provided frequencies. ")
@@ -1145,10 +1156,10 @@ calc_tab <- function(tab) {
           }
 
 
-    ## (F) General consistency checks:
+    ## (F) General consistency checks: -------------------------------
 
         ## TODO: Finish!
-        ## (1) Test whether probabilities are complements:
+        ## (1) Test whether probabilities are complements: ------------------
           prow_comp <- test_pcomp(p_row)
           pcol_comp <- test_pcomp(t(p_col))
 
@@ -1164,7 +1175,7 @@ calc_tab <- function(tab) {
               rix <- which(rowSums(p_row) != 1)  # row index.
 
               ## Row error message:
-              rerr <- paste0(" in row ", paste0(rix, collapse = ", "))
+              rerr <- paste0("in row ", paste0(rix, collapse = ", "))
 
             }
 
@@ -1172,15 +1183,14 @@ calc_tab <- function(tab) {
               cix <- which(colSums(p_col) != 1)  # row index.
 
               ## Row error message:
-              cerr <- paste0(" in column ", paste0(cix, collapse = ", "))
+              cerr <- paste0("in column ", paste0(cix, collapse = ", "))
             }
 
             if(!prow_comp & !pcol_comp){
               seperr <- " and "
             }
 
-
-            stop(paste0("Probabilities", rerr, seperr, cerr, " do not add up to 1."))
+            stop(paste0("Probabilities ", rerr, seperr, cerr, " do not add up to 1."))
 
           }
 
@@ -1235,7 +1245,7 @@ calc_tab <- function(tab) {
         # here everything works fine, as no dependent inputs were specified.
         tst_smp[4, 3] <- 0.01
 
-        calc_tab(tst_smp)
+        calc_tab(tst_smp)  ## Here no error should occur.
 
         tst_smp[4, 1]  <- 0.7  # add PPV; should lead to overspecification.
         calc_tab(tst_smp)  # error message due to overspecifiaction.
@@ -1247,8 +1257,6 @@ calc_tab <- function(tab) {
         test_p23 <- test_p2
         test_p23[, 3] <- NA
         calc_tab(test_p23)  # this doesn't work; more informative error message?
-        ## TODO: This would work! In row 1 one could calculate col 3 from prob and (rel)freq!
-        ## [1,3] * 0.595 = 25 <=> [1, 3] = 25 / 0.595 = 42
 
         test_p23[3, 3] <- 32
         calc_tab(test_p23)  # note: N of 32 is stupid and should lead to a warning
@@ -1258,8 +1266,6 @@ calc_tab <- function(tab) {
         calc_tab(test_p23)  # problem: if I change the N, the rest does not follow suit!
         ## The inputs become inconsistent (maybe beyond repair?)
         ## Note, tables cannot be altered in this fashion!
-        ## TODO: Manage the warning!  Output looks decent!
-
 
         ## The calculations are pretty fast!
         system.time(
