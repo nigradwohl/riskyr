@@ -807,7 +807,7 @@ calc_tab <- function(tab) {
           stop("Provided frequencies imply probabilities different from provided probabilities. ")
         })
 
-  ## (D) Calculate probabilities from probabilities: -----
+  ## (E) Calculate probabilities from probabilities: -----
 
     ## (1) Calculate all possible probability complements: ------
         p_row <- compr_pcomp(p_row)
@@ -1053,7 +1053,7 @@ calc_tab <- function(tab) {
 
         }
 
-    ## (E) Mixed calculations -------------------
+    ## (F) Mixed calculations -------------------
         ## Calculate frequencies from relf:
 
         ## HERE!
@@ -1064,52 +1064,78 @@ calc_tab <- function(tab) {
 
         if(is.na(N)) {  # if no N was provided
 
-          if (all(is.na(otab[1:3, 1:3]))) {  # test, whether any frequency was provided, if not:
+          ## Test, whether any frequency was provided, if not:
+          if (all(is.na(otab[1:3, 1:3]))) {
 
             ## Note, that this case seems very unlikely...
-
-            ## Testing table:
-            # [,1]      [,2]      [,3]
-            # [1,] 0.1752577 0.2577320 0.4329897
-            # [2,] 0.2886598 0.2783505 0.5670103
-            # [3,] 0.4639175 0.5360825 1.0000000
 
             ## 97 is optimal (all integer frequencies)!
             ## One might test what is an optimal factor...
 
-            # riskyr:::factors_min_diff
+            # tst_N <- complete_tab
+            # tst_N[1:3, 1:3] <- NA
 
-            prec <- 5
+            ## TODO: Calculate N so that every frequency is unambigous?
+
             N <- 10^0  # set N.
-            rftb <- round(relf$rftab, prec) * N  # multiply by 1.
-            while(!all(rftb > 1)) {
+            rftb <- relf$rftab * N  # multiply by 1.
+            rrftb <- round(rftb)  # round the table.
+
+            ## Test for frequencies summing up to columns:
+            ccomp <- isTRUE(all.equal(colSums(rrftb[1:2, ]), rrftb[3, ]))
+            rccomp <- isTRUE(all.equal(rowSums(rrftb[, 1:2]), rrftb[, 3]))
+
+            while(all(rftb < 1 && rftb > 0) || !(ccomp || rcomp)) {
               N <- N * 10
-              rftb <- rftb * N
+              rftb <- relf$rftab * N
+
+              ## Require unambigous frequencies:
+                rrftb <- round(rftb)
+
+                ccomp <- isTRUE(all.equal(colSums(rrftb[1:2, ]), rrftb[3, ]))
+                rcomp <- isTRUE(all.equal(rowSums(rrftb[, 1:2]), rrftb[, 3]))
+
             }
 
-            # rftb
+            ## Calculate frequency table:
+            ftab2 <- rftb  # do no rounding (only in the end).???
 
-            round(rftb * N, 1)
 
-            ## TODO: Find a nice method to calculate N (with controlled rounding, as well).
+          } else {
 
-          }
-
-          ## If other frequencies are available:
+            ## If other frequencies are available:
             ftab2 <- f_from_rf(relf$rftab, ftab)
-            ## TODO: Also check against N?
 
             N <- calc_N(relf$rftab, ftab)
+          }
+
 
         } else {  # if an N is avaliable use it:
 
             ftab2 <- f_from_rf(relf$rftab, N = N)
         }
 
-          ## TODO: Allow for some testing, whether N is identified (via calc_N?)
           ## TODO: Test somewhere that summing up works (it does not necessarily! weird rounding?)
               ## Case: tab <- test_p2; N <- 100
               ## This may indicate a general scaling problem, especially for smaller numbers (1000 is fine)...
+            ## This is what should happen:
+              ## comp_freq(prev = ct[3,4], sens = ct[4,1], spec = ct[5,2], N = 100)
+
+            ## Potentially working solution:
+            # a <- relf$rftab * 100
+            #
+            # b <- a - floor(a)  # get decimal places.
+            #
+            #
+            # larger05 <- b > 0.5
+            #
+            # probRow <- rowSums(larger05[, 1:2]) > 1 & !larger05[, 3]  # problematic rows.
+            # probCol <- colSums(larger05[1:2,]) > 1 & !larger05[3, ]  # problematic columns.
+            #
+            # min_ix <- which.min(b[, 1:2][probRow, ])
+            #
+            # a[probRow][min_ix] <- floor(a[probRow][min_ix])
+            # round(a)
 
 
         ## Check provided frequencies for equality:
@@ -1117,12 +1143,6 @@ calc_tab <- function(tab) {
 
           if(!all(ftab_eq[!is.na(ftab_eq)])) {
            stop("Frequencies calculated from probabilities do not match provided frequencies. ")
-
-            ## TODO: Problem occurs here!
-              ## If frequency inputs do not match probability inputs this results in infinite recursion on ftab!
-              ## In case tst_smp one may adjust hits, N, or the probabilities.
-              ## Maybe one may simply throw an error...
-
 
           } else {
             ftab <- ftab2
@@ -1167,7 +1187,7 @@ calc_tab <- function(tab) {
 
 }  # eof calc_tab.
 
-## Testing:
+## Testing: -------------------------------------------------
         calc_tab(test_p2)
         all.equal(complete_tab, calc_tab(test_p2)[[1]])
 
