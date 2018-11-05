@@ -313,7 +313,10 @@ abline(h = 1:(plot_dim[2] - 1) + 0.5)
 
 ### Recursive solution 
 
-```{r example_table}
+
+
+
+```{r example_table, eval=FALSE}
 ## Example table: 
 complete_freq <- rbind(c(17, 25),
                       c(28, 30)
@@ -327,6 +330,9 @@ complete_freq <- rbind(c(17, 25),
     ## Probs:
       p_row <- t(apply(complete_freq, 1, function(X) X/X[3]))[,1:2]
       p_col <- apply(complete_freq, 2, function(X) X/X[3])[1:2, ]
+      
+      p_row <- complete_freq[, c(1,2)] / complete_freq[, 3]
+      p_col <- complete_freq[c(1,2), ] / complete_freq[3, ]
 
     ## Complete table (freqs and probs):
       complete_tab <- cbind(complete_freq, p_row)  # add the row probabilities.
@@ -334,36 +340,82 @@ complete_freq <- rbind(c(17, 25),
       complete_tab[4, 4] <- (complete_tab[1, 1] + complete_tab[2, 2]) / complete_tab[3, 3]
       complete_tab
 
-ex_tab <- complete_tab
-
-## Remove some entries:
-ex_tab <- ex_tab[1:3, 1:3]  # frequencies only.
-  
   ## Version 1:
+  ex_tab <- complete_tab
+  
+  ## Remove some entries:
+  ex_tab <- ex_tab[1:3, 1:3]  # frequencies only.
   ex_tab[2, ] <- NA
   ex_tab[, 2] <- NA
+  ex_tab
+  crow(ex_tab)
+  ccol(ex_tab)
+  ccol(crow(ex_tab))
+  comp_ftab(ex_tab)
   
   ## Version 2:
+  ex_tab <- complete_tab
+
+  ## Remove some entries:
+  ex_tab <- ex_tab[1:3, 1:3]  # frequencies only.
   ex_tab[2, ] <- NA
   ex_tab[3, 2] <- NA
   ex_tab[1, 3] <- NA
+  ex_tab
+  crow(ex_tab)
+  ccol(ex_tab)
+  ccol(crow(ex_tab))
 
   ## version 3:
+  ex_tab <- complete_tab
+
+  ## Remove some entries:
+  ex_tab <- ex_tab[1:3, 1:3]  # frequencies only.
   ex_tab[c(2,3), 2] <- NA
   ex_tab[3, 2] <- NA
-  ex_tab[1, 3] <- NA
+  ex_tab[1, 3] <- NA 
+  ex_tab
+  crow(ex_tab)
+  ccol(ex_tab)
+  ccol(crow(ex_tab))
   
+
   ## Version 4 (should not work):
+  ex_tab <- complete_tab
+
+  ## Remove some entries:
+  ex_tab <- ex_tab[1:3, 1:3]  # frequencies only.
   ex_tab[c(1, 1, 3, 3), c(1, 3, 1, 3)] <- NA
   ex_tab[2, 2] <- NA
+  ex_tab
+  crow(ex_tab)
+  ccol(ex_tab)
+  ccol(crow(ex_tab))  # does not work. 
+  comp_ftab(ex_tab)
   
   ## Version 5:
+  ex_tab <- complete_tab
+
+  ## Remove some entries:
+  ex_tab <- ex_tab[1:3, 1:3]  # frequencies only.
   ex_tab[2, ] <- NA
   ex_tab[1, 2] <- NA
   ex_tab[3, 1] <- NA
+  ex_tab
+  crow(ex_tab)
+  ccol(ex_tab)
+  ccol(crow(ex_tab))
   
   ## Version 6: 
+  ex_tab <- complete_tab
+
+  ## Remove some entries:
+  ex_tab <- ex_tab[1:3, 1:3]  # frequencies only.
   ex_tab[1:3, 3] <- NA
+  ex_tab
+  crow(ex_tab)
+  ccol(ex_tab)
+  ccol(crow(ex_tab))
   
   ## Version 7: (should need the recursion!)
   
@@ -371,6 +423,7 @@ ex_tab <- ex_tab[1:3, 1:3]  # frequencies only.
 exp_tab <- complete_tab
 exp_tab[1, c(2, 3)] <- NA
 exp_tab[c(2, 4), c(5, 2)] <- NA
+calc_tab(ex_tab)
 
   ## Note, one frequency and one probability are necessary and sufficient to calculate a row or column.
 
@@ -380,246 +433,16 @@ calc_tab(ex_tab)
 
 ```{r recursive_function}
 ## For frequency part:
-table <- ex_tab  
+#table <- ex_tab  
 
-table <- exp_tab
-table  # show table for checking reasons:
-
-## Function for recursive calculation: 
-calc_tab <- function(table) {
-  
-  ## Get the dimensions:
-  n_row <- nrow(table)
-  n_col <- ncol(table)
-  
-  ## TODO: Clarify, whether to include both in one function or have separate functions for freqs and probs.
-  
-  ## (A) Calculate frequencies from frequencies: -----
-  
-    ## (1) Check for rows and columns that can be calculated: -----
-    ## Logical index matrix for NA values: 
-    mf_na_log <- is.na(table)  # get matrix of NAs for the frequency case. 
-  
-    ## Stopping point 1:
-    if (!any(mf_na_log)) {
-      return(table)  # return, when table is complete. 
-    }
-  
-
-    ## (a) Rows: -----
-      ## Get indices of rows that can be calculated:
-      rcalc_ix <- which(rowSums(mf_na_log) == 1)  # get rows with exactly one NA (can be calculated). 
-
-      ## Sum up values in the indexed rows except their sum in the last column: 
-      m_rf <- matrix(table[rcalc_ix, -n_col], ncol = n_col - 1)  # matrix of calculable frequency rows. 
-      rsums <- rowSums(m_rf, na.rm = TRUE)  # rowsums to be inserted into cells. 
-    
-      ## Test, which operation to perform: 
-      
-        ## Test for empty sum columns in the calculable rows:
-        rsum_na_lc <- is.na(table[rcalc_ix, n_col])   # which of the calculable rows is NA in the last column? 
-        
-        if (any(rsum_na_lc)) {
-          ## Insert the sums in the last column for the rows with NAs:
-          table[rcalc_ix, n_col][rsum_na_lc] <- rsums[rsum_na_lc]
-        } 
-        
-        ## Test, if there is any row in which the empty cell is not a row sum:
-        if (any(!rsum_na_lc)) {  
-
-          ## Check, which columns in the identified rows are NA:
-          rows_na <- rcalc_ix[!rsum_na_lc]
-          rows_na_m <- matrix(table[rows_na, ], ncol = n_col)  
-          ## get the rows with NAs not in last position. 
-          
-          ## Calculate values for insertion:
-          vals_row <- rows_na_m[, n_col] - rsums[!rsum_na_lc]
-          
-          tab <- t(rows_na_m)  # transpose table, as columns are filled first. 
-          cellr_ix <- which(is.na(tab), arr.ind = TRUE)  # index for the cells without entries. 
-
-          ## Insert the values:
-          tab[cellr_ix] <- vals_row
-          table[rows_na, ] <- t(tab)  # retranspose and reassign. 
-
-        }
-
-      
-    ## (b) Columns: -----
-      ## Renew log_na:
-      mf_na_log <- is.na(table)  # get matrix of NAs
-        
-        ## TODO: Allow to stop hera as well? 
-        
-      ## Get indices of columns that can be calculated:
-      ccalc_ix <- which(colSums(mf_na_log) == 1)  # get columns with exactly one NA (can be calculated). 
-    
-      ## Sum up values in the indexed columns except their sum in the last row: 
-      m_cf <- matrix(table[-n_row, ccalc_ix], nrow = n_row - 1)
-      csums <- colSums(m_cf, na.rm = TRUE)
-      
-      ## Test, which operation to perform: 
-        ## Test for empty sum rows in the calculable columns:
-        csum_na_lr <- is.na(table[n_row, ccalc_ix])  # which of the rows is NA in the last column? 
-        
-        if (any(csum_na_lr)) {
-          ## get index for the columns in which the last row is empty. 
-          table[n_row, ccalc_ix][csum_na_lr] <- csums[csum_na_lr]
-          ## Assign appropriate values. 
-        } 
-        
-        ## Test, if there is any row in which the empty cell is not a row sum:
-        if (any(!csum_na_lr)) { 
-          
-          ## Check, which rows in the identified columns are NA:
-          cols_na <- ccalc_ix[!csum_na_lr]
-          cols_na_m <- matrix(table[, cols_na], nrow = n_row)  
-          ## get the columns with NAs not in last position. 
-          cellc_ix <- which(is.na(cols_na_m), arr.ind = TRUE)  # index for the cells without entries. 
-          
-          vals_col <- cols_na_m[n_row, ] - csums[!csum_na_lr]
-          table[, cols_na][is.na(table[, cols_na])] <- vals_col
-          
-        }
-        
-        
-    ## XX: Return statement and stopping rules: --------
-      mf_na_log <- is.na(table)  # get matrix of NAs after one run. 
-      
-      ## Recursive STOPPING rule 1:
-      if (!any(mf_na_log)) {
-        return(table)  # return, when table is complete. 
-        
-      ## STOPPING RULE 2:
-      } else if(!any(rowSums(mf_na_log) == 1 | colSums(mf_na_log) == 1)) {  
-        ## if no single value in neither dimension. 
-        
-        stop("The information you specified is not sufficient to calculate the table.\n
-              I need at least one more value."
-                    )
-      
-      ## CONTINUE:  
-      } else {
-        
-        return(calc_tab(table))
-      }
-        
-        
-        
-        # TODO: Perform consistency checks or update NA-matrix in between steps?
-        # TODO: Provide an informative error message upon insufficient inputs. 
-    
-  ## (B) Include probabilities: ------
-    ## (1) Calculate all possible probabilities (see above?): ------
-      ## (a) Mute the frequency proportion:
-      ptab <- table
-
-      ## Set the dimensions of the frequency part:
-      frow <- 3
-      fcol <- 3
-        ## This may be done dynamically in the future.
-        ## TODO!
-      ptab[1:frow, 1:fcol] <- NA  # mute the frequency part.
-
-      ## Bayes rule: P(A|B) = (P(B|A) * P(A)) / P(B)
-
-      ## (a) Calculate all complements: ------
-
-        ## Checking for completeness:
-        mp_r <- ptab[1:frow, -(1:fcol)]  # matrix of probabilities calculated from rows.
-        mp_r_na_log <- is.na(mp_r)
-        mp_c <- ptab[-(1:frow), 1:fcol]  # matrix of probabiilities calculated from columns.
-        mp_c_na_log <- is.na(mp_c)
-
-        pr_inc <- any(mp_r_na_log)  # check rows.
-        pc_inc <- any(mp_c_na_log)  # check cols.
-
-        if (!any(c(pr_inc, pc_inc))) # TODO: this is a stopping condition for the probabilitiy case.
-
-        ## Calculate compelemets for rows: -----
-        if(pr_inc) {  # if row elements are missing.
-
-          row_na <- which(rowSums(mp_r_na_log) == 1)  # get rows with NA-values.
-          rmat_na <- matrix(mp_r[row_na, ], ncol = ncol(mp_r))  # convert into matrix (to allow rowsums).
-          ## Complete row matrix:
-          mp_r[row_na, mp_r_na_log[row_na, ]] <- 1 - rowSums(rmat_na, na.rm = TRUE)
-
-          ## Check summing up to one:
-            rows_eq1 <- rowSums(mp_r) == 1
-
-            ## Warn (or provide error, if they do not):
-            if(any(!rows_eq1)) warning(paste0("Probabilities in row ", which(!rows_eq1), " do not sum up to 1."))
-
-          ## Include into original table:
-            ptab[1:frow, -(1:fcol)] <- mp_r
-        }
-
-
-        ## Calculate compelemets for columns: ------
-        if (pc_inc) {  # if column elements are missing.
-
-          col_na <- which(colSums(mp_c_na_log) == 1)  # get cols with NA-values.
-          cmat_na <- matrix(mp_c[, col_na], nrow = nrow(mp_c))  # convert into matrix (to allow colsums).
-          ## Complete column matrix:
-          mp_c[mp_c_na_log[, col_na], col_na] <- 1 - colSums(cmat_na, na.rm = TRUE)
-
-          ## Check summing up to one:
-            cols_eq1 <- colSums(mp_c) == 1
-
-            ## Warn (or provide error, if they do not):
-            if(any(!comp_col)) {
-              warning(paste0("Probabilities in column ", which(!cols_eq1), " do not sum up to 1.\n"))
-            }
-
-          ## Include into original table:
-            ptab[-(1:frow), 1:fcol] <- mp_c
-        }
-
-      ## Reassemble tables:
-        table[!is.na(ptab)] <- ptab[!is.na(ptab)]
-          
-        
-      ## TODO: Proper naming!!!
-      ## TODO: Split up functions?
-            
-      ## Note: As long, as there are two conditional probabilities 
-      ## and the corresponding unconditional probability, all can be calculated in a 2x2 table.
-      ## However, this is redundant with the pathway over the frequencies:
-      ## - as soon, as any frequency is given--may be an arbitrary N--a row or column can be calculated;
-        ## This allows to calculate the col or row sums
-        ## From these one can calculate the cell frequencies via the corresponding conditional ps!
-      
-      ## ANY frequency + appropriate probabilities will do!
-      ## This accounts for using the frequency + probability algorithm and the frequency algorithm. 
-      
-    ##+++HERE+++##
-
-    ## (2) Calculating frequencies from probabilities: ------
-      ## Note: as long as there is one probability and one frequency in any row or column it can be calculated.
-      
-      ## Mapping:
-        ## Within each row or column the other dimension maps 1 -> 4, 2 -> 5 in a 2x2 table. 
-        ## More generally it maps according to cell_ix -> cell_ix + dim + 1  (dim - 1 + 2). 
-
-  ## TODO: When to set N = 1 (or other arbitrary number)?
-
-  ## (C) General consistency checks:
-    ## TODO? Calculate the table in different ways and compare the results? 
-        
-        ## Potential ways of checkign: 
-          ## - is_valid_prob_pair {riskyr} (passing tol!)
-          ## - is_prob
-
-  
-}
-
-
+# table <- exp_tab
+#table  # show table for checking reasons:
 ```
 
 
 ```{r function_testing}
 ## (A) Frequency version:
-calc_tab(ex_tab)
+# calc_tab(ex_tab)
 ```
 
 
