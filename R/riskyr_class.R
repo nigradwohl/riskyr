@@ -113,39 +113,6 @@ riskyr_tabular <- function(x,
                            scen.src = txt$scen.src,
                            scen.apa = txt$scen.apa) {
 
-  ## Tables for testing purposes:
-    complete_freq <- rbind(c(17, 25),
-                      c(28, 30)
-                      )
-    ## Sums (frequency table):
-    complete_freq <- cbind(complete_freq, rowSums(complete_freq))
-    complete_freq <- rbind(complete_freq, colSums(complete_freq))
-
-    rel_freq <- complete_freq / complete_freq[dim(complete_freq)[1], dim(complete_freq)[2]]
-
-    ## Probs:
-      p_row <- t(apply(complete_freq, 1, function(X) X/X[3]))[,1:2]
-      p_col <- apply(complete_freq, 2, function(X) X/X[3])[1:2, ]
-
-    ## Complete table (freqs and probs):
-      complete_tab <- cbind(complete_freq, p_row)  # add the row probabilities.
-      complete_tab <- rbind(complete_tab, cbind(p_col, NA, NA))
-      complete_tab[4, 4] <- (complete_tab[1, 1] + complete_tab[2, 2]) / complete_tab[3, 3]
-      complete_tab
-
-
-    ## Relative frequency table:
-      tab_rel <- cbind(rel_freq, p_row)
-      tab_rel <- rbind(tab_rel, cbind(p_col, NA, NA))
-      v_diag <- diag(tab_rel)  # use instead of below statements.
-      dix <- which(is.na(v_diag))[1]  # index value for diagonal (symmertric table only).
-      vals_diag <- v_diag[!is.na(v_diag)]  #exclude NA-values.
-      nmrtr <- vals_diag[1:(length(vals_diag) - 1)]  # exclude last element (N) to obtain numerator.
-      tab_rel[dix, dix] <- (sum(nmrtr)) / vals_diag[length(vals_diag)]
-      tab_rel
-
-    ## assign to x:
-    x <- complete_tab
 
   ## (0) Consistency checks: ------
     ## (a) Are labels for every cell provided (if any)?
@@ -553,9 +520,12 @@ riskyr.general <- function(scen.lbl = "",  ## WAS: txt$scen.lbl,
                    ## original entries are retained.
                    r1c1.lbl = txt$hi.lbl, r2c2.lbl = txt$mi.lbl,
                    r1c2.lbl = txt$fa.lbl, r2c2.lbl = txt$cr.lbl,
+                   ## TODO: Labels for proportions!
                    ## Numeric inputs:
                    ## Frequencies:
                    N = NA,  ## Total frequency in the table.
+                   n_r1, n_r2,   # numbers of individuals in row 1 and 2.
+                   n_c1, n_c2,   # numbers of individuals in column 1 and 2.
                    n_r1c1 = NA,  # was hi.
                    n_r1c2 = NA,  # was fa.
                    n_r2c1 = NA,  # was mi.
@@ -581,6 +551,32 @@ riskyr.general <- function(scen.lbl = "",  ## WAS: txt$scen.lbl,
                    scen.apa = txt$scen.apa) {
 
   ##+++Currently HERE+++##
+
+  ## Create a matrix from the entries:
+    tab <- matrix(c(n_r1c1, n_r1c2, n_r1, pr_r1c1, pr_r1c2,
+                    n_r2c1, n_r2c2, n_r2, pr_r2c1, pr_r2c2,
+                    n_c1, n_c2, N, p_c1, p_c2,
+                    pc_r1c1, pc_r1c2, p_r1, rc_12, NA,
+                    pc_r2c1, pc_r2c2, p_r2, NA, NA), byrow = TRUE
+    )
+
+  ## Recover the label matrix from the entries:
+    tab.lbl <- matrix()
+
+  ## Calculate the full riskyr.table object:
+    object <- riskyr_tabular(tab, tab.lbl,
+                   scen.lbl = scen.lbl,
+                   scen.lng = scen.lng,
+                   scen.txt = scen.txt, popu.lbl = popu.lbl,
+                   col.lbl = col.lbl,
+                   row.lbl = txt$dec.lbl,
+                   scen.src = txt$scen.src,
+                   scen.apa = txt$scen.apa)
+
+    return(object)
+
+  ## Should be done here!
+
   ## (0): Initialize some stuff: ------
   freqs <- NA
   probs <- NA
