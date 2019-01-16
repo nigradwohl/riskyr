@@ -636,36 +636,63 @@ plot_icons <- function(prev = num$prev,             # probabilities
 
         block_prop <- type_n / sum(type_n)  # proportion in each compartment.
 
-        prev <- block_prop[1] + block_prop[2]  # TODO: Does this still hold for switched types?
-        # define boundaries:
-        b1 <- block_prop[1] / (block_prop[1] + block_prop[2])
-        b2 <- block_prop [4] / (block_prop[4] + block_prop[3])
-        # TODO: This depends on our typical order!  Might be made more transparent and customizable.
+
 
         ### CURRENTLY HERE!###
         ## TODO: allow having two blocks only (for by = cd and dc)!
         ## Currently  four blocks are fixedly assumed.
 
-        # Quadrant dimensions (with prevalence in y-direction):
-        block1 <- c(0, b1, 0, prev)
-        block2 <- c(b1, 1, 0, prev)
-        block3 <- c(b2, 1, prev, 1)
-        block4 <- c(0, b2, prev, 1)
+        ## Hacky solution:
+        if ( by %in% c("cd", "dc") ) {
 
-        # TODO: Allow to shuffle components around (using a list?).
-        # TODO: not general yet!  How to make it general?  Calculation of area proportions?
+          ## Define boundary:
+          b1 <- block_prop[1]
 
-        # bind vectors together.
-        blocks <- rbind(block1, block2, block3, block4)
+          block1 <- c(0, b1)
+          block2 <- c(b1, 1)
 
-        # set distance parameter:
-        # block_d may not be half the size of the distance between min and max.
-        # for the example of prevalence == 0.15 it may not exceed 0.075.
-        diff_dx <- apply(X = blocks[, c(1, 2)], MARGIN = 1, FUN = diff)
-        diff_dy <- apply(X = blocks[, c(3, 4)], MARGIN = 1, FUN = diff)
+          # bind vectors together.
+          blocks <- rbind(block1, block2)
 
-        cat("diff_dx:", diff_dx, ", diff_dy: ", diff_dx)
-        boundary_d <- min(c(abs(diff_dx), abs(diff_dy))) / 2
+          # set distance parameter:
+          # block_d may not be half the size of the distance between min and max.
+          # for the example of prevalence == 0.15 it may not exceed 0.075.
+          diff_dx <- apply(X = blocks[, c(1, 2)], MARGIN = 1, FUN = diff)
+
+          cat("diff_dx:", diff_dx)
+          boundary_d <- min(c(abs(diff_dx))) / 2
+
+        } else {
+
+          prev <- block_prop[1] + block_prop[2]  # TODO: Does this still hold for switched types?
+          # define boundaries:
+          b1 <- block_prop[1] / (block_prop[1] + block_prop[2])
+          b2 <- block_prop [4] / (block_prop[4] + block_prop[3])
+          # TODO: This depends on our typical order!  Might be made more transparent and customizable.
+
+          # Quadrant dimensions (with prevalence in y-direction):
+          block1 <- c(0, b1, 0, prev)
+          block2 <- c(b1, 1, 0, prev)
+          block3 <- c(b2, 1, prev, 1)
+          block4 <- c(0, b2, prev, 1)
+
+          # TODO: Allow to shuffle components around (using a list?).
+          # TODO: not general yet!  How to make it general?  Calculation of area proportions?
+
+          # bind vectors together.
+          blocks <- rbind(block1, block2, block3, block4)
+
+          # set distance parameter:
+          # block_d may not be half the size of the distance between min and max.
+          # for the example of prevalence == 0.15 it may not exceed 0.075.
+          diff_dx <- apply(X = blocks[, c(1, 2)], MARGIN = 1, FUN = diff)
+          diff_dy <- apply(X = blocks[, c(3, 4)], MARGIN = 1, FUN = diff)
+
+          cat("diff_dx:", diff_dx, ", diff_dy: ", diff_dx)
+          boundary_d <- min(c(abs(diff_dx), abs(diff_dy))) / 2
+
+        }
+
 
         if (is.null(block_d)){
 
@@ -681,25 +708,54 @@ plot_icons <- function(prev = num$prev,             # probabilities
         }
         print("Error?")
 
-        blocks[, c(1, 3)] <- blocks[, c(1, 3)] + block_d
-        blocks[, c(2, 4)] <- blocks[, c(2, 4)] - block_d
+
+        ## Only for two blocks:
+        if ( by %in% c("cd", "dc") ) {
+
+          blocks[, 1] <- blocks[, 1] + block_d
+          blocks[, 2] <- blocks[, 2] - block_d
+
+        } else {
+
+          ## Add distance if necessary:
+          blocks[, c(1, 3)] <- blocks[, c(1, 3)] + block_d
+          blocks[, c(2, 4)] <- blocks[, c(2, 4)] - block_d
+
+        }
+
+
         block_n <- sapply(unique(col_vec), function(x) sum(col_vec == x))
         # calculate number of observations in each compartment.
         blocks <- cbind(blocks, block_n)  # bind to matrix.
 
-        for(i in 1:nrow(blocks)){
-          minx <- blocks[i, 1]
-          maxx <- blocks[i, 2]
-          miny <- blocks[i, 3]
-          maxy <- blocks[i, 4]
-          # TODO: This only holds for equal blocks.
+        ## Hacky if:
+        if ( by %in% c("cd", "dc") ) {
 
-          # sample vectors from blocks:
-          posx_vec_i <- runif(n = blocks[i, 5], min = minx, max = maxx)
-          posy_vec_i <- runif(n = blocks[i, 5], min = miny, max = maxy)
+          for(i in 1:nrow(blocks)){
+            minx <- blocks[i, 1]
+            maxx <- blocks[i, 2]
+            miny <- blocks[i, 3]
+            maxy <- blocks[i, 4]
 
-          posx_vec <- c(posx_vec, posx_vec_i)
-          posy_vec <- c(posy_vec, posy_vec_i)
+        } else {
+
+          for(i in 1:nrow(blocks)){
+            minx <- blocks[i, 1]
+            maxx <- blocks[i, 2]
+            miny <- blocks[i, 3]
+            maxy <- blocks[i, 4]
+            # TODO: This only holds for equal blocks.
+
+            # sample vectors from blocks:
+            posx_vec_i <- runif(n = blocks[i, 5], min = minx, max = maxx)
+            posy_vec_i <- runif(n = blocks[i, 5], min = miny, max = maxy)
+
+            posx_vec <- c(posx_vec, posx_vec_i)
+            posy_vec <- c(posy_vec, posy_vec_i)
+
+        }
+
+
 
         }
       }
