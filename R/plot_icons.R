@@ -642,6 +642,10 @@ plot_icons <- function(prev = num$prev,             # probabilities
         b2 <- block_prop [4] / (block_prop[4] + block_prop[3])
         # TODO: This depends on our typical order!  Might be made more transparent and customizable.
 
+        ### CURRENTLY HERE!###
+        ## TODO: allow having two blocks only (for by = cd and dc)!
+        ## Currently  four blocks are fixedly assumed.
+
         # Quadrant dimensions (with prevalence in y-direction):
         block1 <- c(0, b1, 0, prev)
         block2 <- c(b1, 1, 0, prev)
@@ -660,6 +664,7 @@ plot_icons <- function(prev = num$prev,             # probabilities
         diff_dx <- apply(X = blocks[, c(1, 2)], MARGIN = 1, FUN = diff)
         diff_dy <- apply(X = blocks[, c(3, 4)], MARGIN = 1, FUN = diff)
 
+        cat("diff_dx:", diff_dx, ", diff_dy: ", diff_dx)
         boundary_d <- min(c(abs(diff_dx), abs(diff_dy))) / 2
 
         if (is.null(block_d)){
@@ -668,11 +673,13 @@ plot_icons <- function(prev = num$prev,             # probabilities
 
         }
 
+        cat("block_d:", block_d, ", boundary_d: ", boundary_d)
         if ( block_d >= boundary_d ) {
 
           block_d <- boundary_d - 0.0001  # a little messy though...
 
         }
+        print("Error?")
 
         blocks[, c(1, 3)] <- blocks[, c(1, 3)] + block_d
         blocks[, c(2, 4)] <- blocks[, c(2, 4)] - block_d
@@ -725,7 +732,7 @@ plot_icons <- function(prev = num$prev,             # probabilities
 
     transparency <- NULL  # set transparency to zero.
 
-    #given:
+    # given:
     # block_size_row
     # block_size_col
 
