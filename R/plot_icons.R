@@ -596,11 +596,23 @@ plot_icons <- function(prev = num$prev,             # probabilities
         block_sq <- sqrt(block_n)  # take square root.
 
         # create list of breakpoints including color types:
-        seq_min <- (0:(block_sq - 1)) / block_sq  # of minimal coordinates.
-        seq_max <- (1:block_sq) / block_sq
+        # seq_min <- (0:(block_sq - 1)) / block_sq  # of minimal coordinates.
+        # seq_max <- (1:block_sq) / block_sq
 
-        min_ranges <- expand.grid(x_min = seq_min, y_min = seq_min)  # all combinations of minima.
-        max_ranges <- expand.grid(x_max = seq_max, y_max = seq_max)  # all combinations of maxima.
+        if ( by %in% c("cd", "dc")) {
+
+          min_ranges <- expand.grid(x_min = c(0, 0.5), y_min = 0)
+          max_ranges <- expand.grid(x_max = c(0.5, 1), y_max = 1)  # all combinations of maxima.
+
+        } else {
+
+          seq_min <- (0:(block_sq - 1)) / block_sq  # of minimal coordinates.
+          seq_max <- (1:block_sq) / block_sq
+
+          min_ranges <- expand.grid(x_min = seq_min, y_min = seq_min)  # all combinations of minima.
+          max_ranges <- expand.grid(x_max = seq_max, y_max = seq_max)  # all combinations of maxima.
+
+        }
 
         # add distance between icon blocks:
         global_min <- min(min_ranges)  # get global minimum of minima.
@@ -636,8 +648,6 @@ plot_icons <- function(prev = num$prev,             # probabilities
       if (arr_type == "mosaic") {
 
         block_prop <- type_n / sum(type_n)  # proportion in each compartment.
-
-
 
         ### CURRENTLY HERE!###
         ## TODO: allow having two blocks only (for by = cd and dc)!
