@@ -600,7 +600,7 @@ plot_icons <- function(prev = num$prev,             # probabilities
         # seq_min <- (0:(block_sq - 1)) / block_sq  # of minimal coordinates.
         # seq_max <- (1:block_sq) / block_sq
 
-        if ( by %in% c("cd", "dc", "ac")) {
+        if ( by %in% c("cd", "dc", "ac") ) {
 
           min_ranges <- expand.grid(x_min = c(0, 0.5), y_min = 0)
           max_ranges <- expand.grid(x_max = c(0.5, 1), y_max = 1)  # all combinations of maxima.
