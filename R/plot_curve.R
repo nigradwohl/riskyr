@@ -1,5 +1,5 @@
 ## plot_curve.R | riskyr
-## 2010 01 16
+## 2010 01 17
 ## plot_curve: Plots different probabilities
 ## (e.g., PPV, NPV, ppod, acc) as a function
 ## of prevalence (for given sens and spec).
@@ -123,7 +123,8 @@
 #' # (2) Showing no/multiple prev values/points and uncertainty ranges:
 #' plot_curve(prev = NA)  # default curves, but no prev value (and points) shown
 #' plot_curve(show_points = FALSE, uc = .10)  # curves w/o points, 10% uncertainty range
-#' plot_curve(prev = c(.10, .25, .75), uc = .10)  # 3 prev values, 10% uncertainty range
+#' plot_curve(prev = c(.10, .33, .75))  # 3 prev values, with numeric point labels
+#' plot_curve(prev = c(.10, .33, .75), p_lbl = "no", uc = .10) # 3 prev, no labels, 10% uc
 #'
 #' # (3) Provide local parameters and select curves:
 #' plot_curve(prev = .2, sens = .8, spec = .6, what = c("PPV", "NPV", "acc"), uc = .2)
@@ -156,11 +157,12 @@
 #' plot_curve(p_lbl = "namnum", what = "all")  # names and values
 #'
 #' # Text and color settings:
-#' plot_curve(title_lbl = "Tiny text labels", cex_lbl = .60)
+#' plot_curve(title_lbl = "Tiny text labels", p_lbl = "namnum", cex_lbl = .60)
 #' plot_curve(title_lbl = "Specific colors", what = "all",
 #'            uc = .1, what_col = c("grey", "red3", "green3", "blue3", "gold"))
 #' plot_curve(title_lbl = "Black-and-white print version",
 #'            what = "all", col_pal = pal_bwp)
+#'
 #'
 #' @family visualization functions
 #'
@@ -218,12 +220,18 @@ plot_curve <- function(prev = num$prev,  # probabilities (3 essential, 2 optiona
 
   ## Increase robustness by anticipating and correcting common entry errors: ------
 
+  # p_lbl:
+  if ( is.null(p_lbl) || is.na(p_lbl) ) { p_lbl <- "no" }  # sensible zero/NA/NULL case
+
   # uc:
   if ( is.null(uc) || is.na(uc) ) { uc <- 0 }  # NA/NULL, to avoid error in (uc > 0) below
 
+  ## Determine number of prevalence values:
+  n_prev <- length(prev)  # == 1 for NA or 1 value; but also allowing vectors > 1.
+
   ## (0) Compute or collect current probabilities: ----------
 
-  if ( (length(prev) == 1) &&  # Standard case: 1 prev value provided:
+  if ( (n_prev == 1) && !is.na(prev) &&  # Standard case: 1 non-NA prev value provided:
        (is_valid_prob_set(prev = prev, sens = sens, mirt = mirt, spec = spec, fart = fart, tol = .01)) ) {
 
     ## (1) A provided set of probabilities is valid:
@@ -247,7 +255,7 @@ plot_curve <- function(prev = num$prev,  # probabilities (3 essential, 2 optiona
     cur_PPV <- prob$PPV  # use PPV from prob
     cur_NPV <- prob$NPV  # use NPV from prob
 
-  } else if ( (length(prev) == 1) && is.na(prev) &&  # Case 2a: NO prev value provided:
+  } else if ( (n_prev == 1) && is.na(prev) &&  # Case 2a: NO prev value provided:
               is_valid_prob_pair(sens, mirt, tol = .01) &&
               is_valid_prob_pair(spec, fart, tol = .01) ) {
 
@@ -255,21 +263,27 @@ plot_curve <- function(prev = num$prev,  # probabilities (3 essential, 2 optiona
 
     message("No prevalence value provided: Plotting curves without points.")
 
+    if (is.na(sens)) {sens <- comp_complement(mirt)}  # compute sens if only mirt was provided
+    if (is.na(spec)) {spec <- comp_complement(fart)}  # compute spec if only fart was provided
+
     # No point probabilities:
     show_points <- FALSE
 
     cur_PPV <- NA
     cur_NPV <- NA
 
-  } else if ( (length(prev) > 1) && is_prob(prev) &&  # Case 2b: MULTIPLE prev values provided:
+  } else if ( (n_prev > 1) && is_prob(prev) &&  # Case 2b: MULTIPLE prev values provided:
               is_valid_prob_pair(sens, mirt, tol = .01) &&
               is_valid_prob_pair(spec, fart, tol = .01) ) {
 
     ## (2b) Multiple prev values were provided, and 2 other probabilities are valid:
 
     if (show_points) {
-      message("Multiple prevalence values provided: Using simple labels for points.")
+      message("Multiple prevalence values provided: Using numeric values to label points.")
     }
+
+    if (is.na(sens)) {sens <- comp_complement(mirt)}  # compute sens if only mirt was provided
+    if (is.na(spec)) {spec <- comp_complement(fart)}  # compute spec if only fart was provided
 
     ## No point probabilities:
     # show_points <- FALSE
@@ -289,6 +303,8 @@ plot_curve <- function(prev = num$prev,  # probabilities (3 essential, 2 optiona
     sens <- prob$sens
     spec <- prob$spec
 
+    n_prev <- length(prev)  # n of prev values (here: length(prob$prev), typically == 1)
+
     ## Use current PVs of prob:
     cur_PPV <- prob$PPV  # use PPV from prob
     cur_NPV <- prob$NPV  # use NPV from prob
@@ -299,8 +315,8 @@ plot_curve <- function(prev = num$prev,  # probabilities (3 essential, 2 optiona
 
   x <- NULL  # "nulling out" to avoid NOTE (no visible binding for global variable ‘x’) in R CMD check!
 
+  lbl_digits <- 1     # n_digits to which numeric probability values (prev, PPV, NPV, ppod, acc) are rounded
   p_lbl_sep <- " = "  # separator for probability point labels (p_lbl)
-  lbl_digits <- 2     # n_digits to which numeric probability values (PPV, NPV, ppod, acc) are rounded
 
   ## Set x-value range for plotting curves:
   eps <- 10^-6  # some very small number
@@ -366,7 +382,7 @@ plot_curve <- function(prev = num$prev,  # probabilities (3 essential, 2 optiona
 
     ## Positional parameters (for raising and shifting p labels):
     if (log_scale) {
-      if ( (length(prev) == 1) && (!is.na(prev)) ) {
+      if ( (n_prev == 1) && (!is.na(prev)) ) {
         h_shift <- prev * 2
       } else {
         h_shift <- 0 # ToDo
@@ -378,8 +394,8 @@ plot_curve <- function(prev = num$prev,  # probabilities (3 essential, 2 optiona
         h_shift <- .060  # smaller horizontal shift
       }
     }
-    v_shift <- .025
-    low_PV  <- .15  # threshold value for judging y-value (e.g., PPV or NPV) to be low
+    v_shift <-  3/100
+    low_PV  <- 15/100  # threshold value for judging y-value (e.g., PPV or NPV) to be low
     v_raise <- min(c(cur_PPV, cur_NPV)) + .15  # vertical raise of y-prev when y-value (e.g., PPV or NPV) < low_PV
 
     ## Point appearance:
@@ -489,7 +505,7 @@ plot_curve <- function(prev = num$prev,  # probabilities (3 essential, 2 optiona
 
   if ("prev" %in% what)  { # prev desired:
 
-    if ( (length(prev) == 1) && (!is.na(prev)) ) {  # 1. Standard case: 1 prev value (not NA) provided:
+    if ( (n_prev == 1) && (!is.na(prev)) ) {  # 1. Standard case: 1 prev value (not NA) provided:
 
       ## 0. parameters:
       lty_prev <- 2  # prev line type
@@ -545,40 +561,42 @@ plot_curve <- function(prev = num$prev,  # probabilities (3 essential, 2 optiona
         }
 
         ## 3. label:
-        # prev_lbl <- paste0("prev = ", as_pc(prev, n_digits = lbl_digits), "%")  # prev label
-        prev_lbl <- label_prob(pname = "prev", lbl_type = p_lbl, lbl_sep = p_lbl_sep, cur_prob = prob) # automatic label
+        if (p_lbl != "no") {
 
-        if ((cur_NPV < low_PV) | (cur_PPV < low_PV)) { # y at v_raise:
-          if ( (prev < .50) || !(prev > 1 - h_shift) ) {
-            text(x = prev + h_shift, y = 0 + v_raise,
-                 labels = prev_lbl, col = col_prev, cex = cex_lbl_sm)  # prev on right
-          } else {
-            text(x = prev - h_shift, y = 0 + v_raise,
-                 labels = prev_lbl, col = col_prev, cex = cex_lbl_sm)  # prev on left+
+          # prev_lbl <- paste0("prev = ", as_pc(prev, n_digits = lbl_digits), "%")  # prev label
+          prev_lbl <- label_prob(pname = "prev", lbl_type = p_lbl, lbl_sep = p_lbl_sep, cur_prob = prob) # automatic label
+
+          if ((cur_NPV < low_PV) | (cur_PPV < low_PV)) { # y at v_raise:
+            if ( (prev < .50) || !(prev > 1 - h_shift) ) {
+              text(x = prev + h_shift, y = 0 + v_raise,
+                   labels = prev_lbl, col = col_prev, cex = cex_lbl_sm)  # prev on right
+            } else {
+              text(x = prev - h_shift, y = 0 + v_raise,
+                   labels = prev_lbl, col = col_prev, cex = cex_lbl_sm)  # prev on left+
+            }
+          } else { # y at bottom (y = 0):
+            # if ( (prev < h_shift) || !(prev > (1 - h_shift - .05)) ) {  # only depending on prev & h_shift:
+            if ( !(prev > (1 - h_shift - .05)) ) {  # only depending on prev & h_shift:
+              text(x = prev + h_shift, y = 0 + v_shift,
+                   labels = prev_lbl, col = col_prev, cex = cex_lbl_sm)  # prev on right
+            } else {
+              text(x = prev - h_shift, y = 0 + v_shift,
+                   labels = prev_lbl, col = col_prev, cex = cex_lbl_sm)  # prev on left+
+            }
           }
-        } else { # y at bottom (y = 0):
-          # if ( (prev < h_shift) || !(prev > (1 - h_shift - .05)) ) {  # only depending on prev & h_shift:
-          if ( !(prev > (1 - h_shift - .05)) ) {  # only depending on prev & h_shift:
-            text(x = prev + h_shift, y = 0 + v_shift,
-                 labels = prev_lbl, col = col_prev, cex = cex_lbl_sm)  # prev on right
-          } else {
-            text(x = prev - h_shift, y = 0 + v_shift,
-                 labels = prev_lbl, col = col_prev, cex = cex_lbl_sm)  # prev on left+
-          }
-        }
+
+        } # if (p_lbl != "no") etc.
 
       } # if (show_points) etc.
 
-    } else if ( (length(prev) == 1) && (is.na(prev)) ) {  # 2. Special case: prev = NA provided:
+    } else if ( (n_prev == 1) && (is.na(prev)) ) {  # 2. Special case: prev = NA provided:
 
       ## Do nothing:
       # message("No prevalence value provided (prev = NA).")
 
-    } else if (length(prev) > 1) {  # 3. Special case: Multiple prev values provided:
+    } else if (n_prev > 1) {  # 3. Special case: Multiple prev values provided:
 
       # message("Plot multiple prev lines:")  # debugging
-
-      n_prev <- length(prev) # n of prev values
 
       # lty range:
       lty_n_prev <- rep(2:6, length = n_prev)
@@ -590,13 +608,12 @@ plot_curve <- function(prev = num$prev,  # probabilities (3 essential, 2 optiona
       max_prev <- max(prev)
       prev_range <- (max_prev - min_prev)  # range of current prev values
 
-      # label correction factor:
+      # Set horizontal shift (outside loop):
       if (show_points) {
-        h_shift <- 1/3 * h_shift  # smaller correction factor (due to shorter label)
+        h_shift <- 3/100  # small correction factor (due to shorter label)
       }
 
-      ## Loop: All i prev values prev_i:
-      for (i in 1:n_prev) {
+      for (i in 1:n_prev) {  # Loop through all i prev values prev_i:
 
         prev_i <- prev[i]  # i-th prev value: prev_i
 
@@ -648,49 +665,33 @@ plot_curve <- function(prev = num$prev,  # probabilities (3 essential, 2 optiona
         # Special case: If p_lwd > 1:  Make prev_lwd <- p_lwd/2, else: Use altered value p_lwd:
         if (p_lwd > 1) { prev_lwd <- p_lwd/2 } else { prev_lwd <- p_lwd }
 
-        ## 1. curve: prev at prev_i as vline
+        ## 1. curve: prev at prev_i as a vertical line:
         abline(v = prev_i, lty = lty_prev, lwd = prev_lwd, col = col_prev)  # prev curve/line
 
-        ## 2. point:
         if (show_points) {
 
-          ## NEW: compute points for current prev value prev_i:
-          ## Compute and assign current PVs:
-          cur_PPV <- comp_PPV(prev_i, sens, spec)  # compute PPV from probabilities
-          cur_NPV <- comp_NPV(prev_i, sens, spec)  # compute NPV from probabilities
-          # +++ here now +++
-
-          if ((cur_NPV < low_PV) | (cur_PPV < low_PV)) { # y-pos at v_raise:
-            points(x = prev_i, y = 0 + v_raise, pch = pt_pch, cex = pt_cex, lwd = pt_lwd, col = col_bord, bg = col_prev)  # prev point prev_i
-          } else { # y-pos at bottom (y = 0):
-            points(x = prev_i, y = 0,           pch = pt_pch, cex = pt_cex, lwd = pt_lwd, col = col_bord, bg = col_prev)  # prev point prev_i
-          }
+          ## 2. point:
+          points(x = prev_i, y = 0, pch = pt_pch, cex = pt_cex, lwd = pt_lwd, col = col_bord, bg = col_prev)  # prev point prev_i
 
           ## 3. label:
-          # prev_lbl <- label_prob(pname = "prev", lbl_type = p_lbl, lbl_sep = p_lbl_sep, cur_prob = prob) # automatic label
-          ## NEW: Compose specific label for each prev_i:
-          # prev_lbl <- paste0(i , ". prev = ", as_pc(prev_i, n_digits = lbl_digits), "%")  # Specific prev label for prev_i
-          # prev_lbl <- paste0("prev = ", as_pc(prev_i, n_digits = lbl_digits), "%")  # Shorter specific prev label for prev_i
-          prev_lbl <- paste0(as_pc(prev_i, n_digits = lbl_digits), "%")  # Shorter specific prev label for prev_i
+          if (p_lbl != "no") {
 
-          if ((cur_NPV < low_PV) | (cur_PPV < low_PV)) { # y at v_raise:
-            if ( (prev_i < .50) || !(prev_i > 1 - h_shift) ) {
-              text(x = prev_i + h_shift, y = 0 + v_raise,
-                   labels = prev_lbl, col = col_prev, cex = cex_lbl_sm)  # prev_i on right
+            # Compose label:
+            # prev_lbl <- label_prob(pname = "prev", lbl_type = p_lbl, lbl_sep = p_lbl_sep, cur_prob = prob) # automatic label
+            prev_lbl <- paste0(as_pc(prev_i, n_digits = lbl_digits), "%")  # Shorter specific prev label for prev_i
+
+            # Position of label:
+            if (prev_i < .91) {
+              prev_x <- (prev_i + h_shift)  # to right of prev_i
             } else {
-              text(x = prev_i - h_shift, y = 0 + v_raise,
-                   labels = prev_lbl, col = col_prev, cex = cex_lbl_sm)  # prev_i on left+
+              prev_x <- (prev_i - h_shift)  # to left of prev_i
             }
-          } else { # y at bottom (y = 0):
-            # if ( (prev_i < h_shift) || !(prev_i > (1 - h_shift - .05)) ) {  # only depending on prev & h_shift:
-            if ( !(prev_i > (1 - h_shift - .05)) ) {  # only depending on prev & h_shift:
-              text(x = prev_i + h_shift, y = 0 + v_shift,
-                   labels = prev_lbl, col = col_prev, cex = cex_lbl_sm)  # prev_i on right
-            } else {
-              text(x = prev_i - h_shift, y = 0 + v_shift,
-                   labels = prev_lbl, col = col_prev, cex = cex_lbl_sm)  # prev_i on left+
-            }
-          }
+            prev_y <- (0 + v_shift)
+
+            # Print label:
+            text(x = prev_x, y = prev_y, labels = prev_lbl, col = col_prev, cex = cex_lbl_sm)
+
+          } # if (p_lbl != "no") etc.
 
         } # if (show_points) etc.
 
@@ -700,7 +701,7 @@ plot_curve <- function(prev = num$prev,  # probabilities (3 essential, 2 optiona
 
       message("Unknown prevalence value (prev) provided.")
 
-    } # if (length(prev) == 1) etc.
+    } # if (n_prev == 1) etc.
 
   } # if ("prev" %in% what) etc.
 
@@ -719,12 +720,6 @@ plot_curve <- function(prev = num$prev,  # probabilities (3 essential, 2 optiona
     } else {
       col_ppv <- col_pal["ppv"]  # use default color for PPV
     }
-
-    # # Detect and handle special case of color equality (e.g., pal_bwp):
-    # if ( all_equal(c("black", col_pal[["ppv"]])) && (length(what_col) != length(what)) ) {
-    #   col_ppv <- "black"  # distinct PPV color
-    #   lty_ppv <- 1        # unique PPV line type
-    # }
 
     legend_lbls <- c(legend_lbls, "PPV")    # add PPV label
     legend_cols <- c(legend_cols, col_ppv)  # add PPV color
@@ -761,27 +756,58 @@ plot_curve <- function(prev = num$prev,  # probabilities (3 essential, 2 optiona
     ## 2. PPV point:
     if (show_points) {
 
-      if (length(prev) == 1) { # (a) plot current point only:
+      if (n_prev == 1) { # (a) plot current point only:
 
         points(x = prev, y = cur_PPV, pch = pt_pch, cex = pt_cex, lwd = pt_lwd, col = col_bord, bg = col_ppv)  # PPV point
 
         ## 3. label:
-        # PPV_lbl <- paste0("PPV = ", as_pc(cur_PPV, n_digits = lbl_digits), "%")  # PPV label
-        PPV_lbl <- label_prob(pname = "PPV", lbl_type = p_lbl, lbl_sep = p_lbl_sep, cur_prob = prob) # automatic label
+        if (p_lbl != "no") {
 
-        if ( (cur_PPV < .75 & !(prev > 1 - h_shift)) || (prev < h_shift) ) {
-          text(x = prev + h_shift, y = cur_PPV + v_shift,
-               labels = PPV_lbl, col = col_ppv, cex = cex_lbl_sm)  # PPV on right
-        } else {
-          text(x = prev - h_shift, y = cur_PPV + v_shift,
-               labels = PPV_lbl, col = col_ppv, cex = cex_lbl_sm)  # PPV on left+
+          # PPV_lbl <- paste0("PPV = ", as_pc(cur_PPV, n_digits = lbl_digits), "%")  # PPV label
+          PPV_lbl <- label_prob(pname = "PPV", lbl_type = p_lbl, lbl_sep = p_lbl_sep, cur_prob = prob)  # automatic label
+
+          if ( (cur_PPV < .75 & !(prev > 1 - h_shift)) || (prev < h_shift) ) {
+            text(x = prev + h_shift, y = cur_PPV + v_shift,
+                 labels = PPV_lbl, col = col_ppv, cex = cex_lbl_sm)  # PPV on right
+          } else {
+            text(x = prev - h_shift, y = cur_PPV + v_shift,
+                 labels = PPV_lbl, col = col_ppv, cex = cex_lbl_sm)  # PPV on left+
+          }
+
+        } # if (p_lbl != "no") etc.
+
+      } else if (n_prev > 1) { # (b) plot points for all prev values:
+
+        # Set horizontal shift (outside loop):
+        if (show_points) {
+          h_shift <- 4/100  # small correction factor (due to shorter label)
         }
 
-      } else if (length(prev) > 1) { # (b) plot points for all prev values:
+        for (i in 1:n_prev) {  # Loop through all i prev values prev_i:
 
-        ## ToDo: Loop through all prev values and compute and draw corresponding points.
+          prev_i <- prev[i]  # i-th prev value: prev_i
 
-      } # (length(prev) etc.
+          cur_PPV <- comp_PPV(prev = prev_i, sens = sens, spec = spec)  # compute current point: PPV
+
+          points(x = prev_i, y = cur_PPV, pch = pt_pch, cex = pt_cex, lwd = pt_lwd, col = col_bord, bg = col_ppv)  # PPV point
+
+          if (p_lbl != "no") {
+
+            # Compose label:
+            point_lbl <- paste0(as_pc(cur_PPV, n_digits = lbl_digits), "%")  # Shorter specific label for current point
+
+            # Position of label:
+            point_x <- (prev_i + h_shift)  # to right of prev_i
+            point_y <- cur_PPV - (cur_PPV * v_shift)  # weighted y shift
+
+            # Print label:
+            text(x = point_x, y = point_y, labels = point_lbl, col = col_ppv, cex = cex_lbl_sm)
+
+          } # if (p_lbl != "no") etc.
+
+        } # for (i in 1:n_prev) loop.
+
+      } # (n_prev etc.
 
     } # if (show_points) etc.
 
@@ -845,7 +871,7 @@ plot_curve <- function(prev = num$prev,  # probabilities (3 essential, 2 optiona
     ## 2. NPV point:
     if (show_points) {
 
-      if (length(prev) == 1) { # (a) plot current point only:
+      if (n_prev == 1) { # (a) plot current point only:
 
         points(x = prev, y = cur_NPV, pch = pt_pch, cex = pt_cex, lwd = pt_lwd, col = col_bord, bg = col_npv)  # NPV point
 
@@ -861,11 +887,38 @@ plot_curve <- function(prev = num$prev,  # probabilities (3 essential, 2 optiona
                labels = NPV_lbl, col = col_npv, cex = cex_lbl_sm)  # NPV on left-
         }
 
-      } else if (length(prev) > 1) { # (b) plot points for all prev values:
+      } else if (n_prev > 1) { # (b) plot points for all prev values:
 
-        ## ToDo: Loop through all prev values and compute and draw corresponding points.
+        # Set horizontal shift (outside loop):
+        if (show_points) {
+          h_shift <- 4/100  # small correction factor (due to shorter label)
+        }
 
-      } # (length(prev) etc.
+        for (i in 1:n_prev) {  # Loop through all i prev values prev_i:
+
+          prev_i <- prev[i]  # i-th prev value: prev_i
+
+          cur_NPV <- comp_NPV(prev = prev_i, sens = sens, spec = spec)  # compute current point: NPV
+
+          points(x = prev_i, y = cur_NPV, pch = pt_pch, cex = pt_cex, lwd = pt_lwd, col = col_bord, bg = col_npv)  # NPV point
+
+          if (p_lbl != "no") {
+
+            # Compose label:
+            point_lbl <- paste0(as_pc(cur_NPV, n_digits = lbl_digits), "%")  # Shorter specific label for current point
+
+            # Position of label:
+            point_x <- (prev_i + h_shift)  # to right of prev_i
+            point_y <- cur_NPV + (cur_NPV * v_shift)  # weighted y shift
+
+            # Print label:
+            text(x = point_x, y = point_y, labels = point_lbl, col = col_npv, cex = cex_lbl_sm)
+
+          } # if (p_lbl != "no") etc.
+
+        } # for (i in 1:n_prev) loop.
+
+      } # (n_prev etc.
 
     } # if (show_points)...
 
@@ -931,7 +984,7 @@ plot_curve <- function(prev = num$prev,  # probabilities (3 essential, 2 optiona
     ## 2. point:
     if (show_points) {
 
-      if (length(prev) == 1) { # (a) plot current point only:
+      if (n_prev == 1) { # (a) plot current point only:
 
         points(x = prev, y = cur_ppod, pch = pt_pch, cex = pt_cex, lwd = pt_lwd, col = col_bord, bg = col_ppod)  # ppod point
 
@@ -948,11 +1001,38 @@ plot_curve <- function(prev = num$prev,  # probabilities (3 essential, 2 optiona
                labels = ppod_lbl, col = col_ppod, cex = cex_lbl_sm)  # ppod on left-
         }
 
-      } else if (length(prev) > 1) { # (b) plot points for all prev values:
+      } else if (n_prev > 1) { # (b) plot points for all prev values:
 
-        ## ToDo: Loop through all prev values and compute and draw corresponding points.
+        # Set horizontal shift (outside loop):
+        if (show_points) {
+          h_shift <- 4/100  # small correction factor (due to shorter label)
+        }
 
-      } # (length(prev) etc.
+        for (i in 1:n_prev) {  # Loop through all i prev values prev_i:
+
+          prev_i <- prev[i]  # i-th prev value: prev_i
+
+          cur_ppod <- comp_ppod(prev = prev_i, sens = sens, spec = spec)  # compute current point: ppod
+
+          points(x = prev_i, y = cur_ppod, pch = pt_pch, cex = pt_cex, lwd = pt_lwd, col = col_bord, bg = col_ppod)  # ppod point
+
+          if (p_lbl != "no") {
+
+            # Compose label:
+            point_lbl <- paste0(as_pc(cur_ppod, n_digits = lbl_digits), "%")  # Shorter specific label for current point
+
+            # Position of label:
+            point_x <- (prev_i + h_shift)  # to right of prev_i
+            point_y <- cur_ppod - (cur_ppod * v_shift)  # weighted y shift
+
+            # Print label:
+            text(x = point_x, y = point_y, labels = point_lbl, col = col_ppod, cex = cex_lbl_sm)
+
+          } # if (p_lbl != "no") etc.
+
+        } # for (i in 1:n_prev) loop.
+
+      } # (n_prev etc.
 
     } # if (show_points)...
 
@@ -1017,7 +1097,7 @@ plot_curve <- function(prev = num$prev,  # probabilities (3 essential, 2 optiona
     ## 2. acc point:
     if (show_points) {
 
-      if (length(prev) == 1) { # (a) plot current point only:
+      if (n_prev == 1) { # (a) plot current point only:
 
         points(x = prev, y = cur_acc, pch = pt_pch, cex = pt_cex, lwd = pt_lwd, col = col_bord, bg = col_acc)  # acc point
 
@@ -1033,11 +1113,39 @@ plot_curve <- function(prev = num$prev,  # probabilities (3 essential, 2 optiona
                labels = acc_lbl, col = col_acc, cex = cex_lbl_sm)  # acc on left-
         }
 
-      } else if (length(prev) > 1) { # (b) plot points for all prev values:
+      } else if (n_prev > 1) { # (b) plot points for all prev values:
 
-        ## ToDo: Loop through all prev values and compute and draw corresponding points.
+        # Set horizontal shift (outside loop):
+        if (show_points) {
+          h_shift <- 4/100  # small correction factor (due to shorter label)
+        }
 
-      } # (length(prev) etc.
+        for (i in 1:n_prev) {  # Loop through all i prev values prev_i:
+
+          prev_i <- prev[i]  # i-th prev value: prev_i
+
+          cur_acc <- comp_acc(prev = prev_i, sens = sens, spec = spec)  # compute current point: acc
+
+          points(x = prev_i, y = cur_acc, pch = pt_pch, cex = pt_cex, lwd = pt_lwd, col = col_bord, bg = col_acc)  # ppod point
+
+          if (p_lbl != "no") {
+
+            # Compose label:
+            point_lbl <- paste0(as_pc(cur_acc, n_digits = lbl_digits), "%")  # Shorter specific label for current point
+
+            # Position of label:
+            point_x <- (prev_i + h_shift)  # to right of prev_i
+            point_y <- cur_acc + (cur_acc * v_shift)  # weighted y shift
+
+            # Print label:
+            text(x = point_x, y = point_y, labels = point_lbl, col = col_acc, cex = cex_lbl_sm)
+
+          } # if (p_lbl != "no") etc.
+
+        } # for (i in 1:n_prev) loop.
+
+      } # (n_prev etc.
+
 
     } # if (show_points)...
 
@@ -1078,7 +1186,7 @@ plot_curve <- function(prev = num$prev,  # probabilities (3 essential, 2 optiona
 
     if (show_freq) {
 
-      if ( (length(prev) == 1) && !is.na(prev) ) {
+      if ( (n_prev == 1) && !is.na(prev) ) {
 
         N <- 1000  # HACK: compute freq values for some N:
         freq <- comp_freq_prob(prev = prev, sens = sens, spec = spec, N = N, round = TRUE)
@@ -1126,7 +1234,7 @@ plot_curve <- function(prev = num$prev,  # probabilities (3 essential, 2 optiona
     # legend("bottom", legend = c("PPV", "NPV"),
     #       col = c(col_ppv, col_npv), lty = 1, lwd = p_lwd, cex = 1, bty = "o", bg = "white")
 
-    if (length(prev) == 1) {  # Standard case: prev is NA or 1 value:
+    if (n_prev == 1) {  # Standard case: prev is NA or 1 value:
 
       add_legend("topright",
                  legend = legend_lbls, lty = legend_ltys, lwd = p_lwd, col = legend_cols,
@@ -1142,7 +1250,7 @@ plot_curve <- function(prev = num$prev,  # probabilities (3 essential, 2 optiona
                  legend = legend_lbls, lty = legend_ltys, lwd = p_lwd, col = legend_cols,
                  cex = cex_lbl, horiz = FALSE, bty = 'n')
 
-    } # if (length(prev) == 1) etc.
+    } # if (n_prev == 1) etc.
 
   } # if (length(legend_lbls) > 0) etc.
 
@@ -1170,8 +1278,8 @@ plot_curve <- function(prev = num$prev,  # probabilities (3 essential, 2 optiona
 # plot_curve(what = c("prev", "PPV", "NPV", "ppod"))  # => prev, PPV, NPV, and acc
 #
 # ## Visualizing uncertainty (as ranges):
-# plot_curve(what = c("prev", "PPV", "NPV"), uc = .10)  # => prev, PPV and NPV with 10% uncertainty range
-# plot_curve(prev = .2, sens = .8, spec = .7, what = "all", uc = .1)  # => all metrics with 10% uncertainty range
+# plot_curve(what = c("prev", "PPV", "NPV"), uc = .10)  # => prev, PPV and NPV, 10% uncertainty range
+# plot_curve(prev = .2, sens = .8, spec = .7, what = "all", uc = .1)  # 10% uncertainty range
 #
 # ## Other options:
 # plot_curve(show_points = FALSE)  # => default without points
@@ -1225,6 +1333,11 @@ plot_curve <- function(prev = num$prev,  # probabilities (3 essential, 2 optiona
 
 ## (*) Done: ----------
 
+# Curves do not need a specific prevalence value: [2019 01 16]
+# - allowed computing curves without a specific prevalence (prev = NA)
+# - allowed supplying a vector of prevalences (and corresponding labels) to show
+#   multiple vertical lines and points on curve(s).
+
 ## - Add option uc to show _ranges_ (polygons) to better visualize uncertainty.
 ## - Clean up code.  [2018 08 28]
 ## - Compute and use local prob for all probability values
@@ -1232,10 +1345,11 @@ plot_curve <- function(prev = num$prev,  # probabilities (3 essential, 2 optiona
 
 ## (+) ToDo: ----------
 
-# Note: Curves do not need a specific prevalence value!
-# - Allow computing curves without a specific prevalence
-# - Allow supplying a vector of prevalences (and corresponding labels) to show
-#   multiple vertical lines and points on curve(s).
+## - Revise function to:
+##   1. Plot all desired curves (with uc-ranges, and allowing for multiple curves of 1 type)
+##   2. Plot vertical prev lines for any prev specified (if desired)
+##   3. Plot points on curves for any prev specified (if desired)
+##   4. Label curves or points on curves (as specified)
 
 ## - Add option to sample multiple points from given _prob_ distributions.
 
