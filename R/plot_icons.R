@@ -584,6 +584,11 @@ plot_icons <- function(prev = num$prev,             # probabilities
       # calculate number of observations in each block retaining original order:
       type_n <- sapply(unique(col_vec), function(x) sum(col_vec == x))
 
+      ## CURRENTLY HERE ##
+      ## TODO: The basic problem with many function parts is that they
+      ## cannot properly handle missing categories!
+      ## One needs to count the absent colors as well.
+
       # equal compartments:
       if (arr_type == "fillequal") {  # density varies, area is constant.
 
