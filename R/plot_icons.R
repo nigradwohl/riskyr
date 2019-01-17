@@ -583,6 +583,7 @@ plot_icons <- function(prev = num$prev,             # probabilities
 
       # calculate number of observations in each block retaining original order:
       type_n <- sapply(unique(col_vec), function(x) sum(col_vec == x))
+      ## TODO: This one should count all four (or two) categories.
 
       ## CURRENTLY HERE ##
       ## TODO: The basic problem with many function parts is that they
