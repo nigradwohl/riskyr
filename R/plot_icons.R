@@ -382,6 +382,7 @@ plot_icons <- function(prev = num$prev,             # probabilities
 
   # (+) Detect and handle special case of color equality (e.g., pal_bwp):
   if (all_equal(c(col_pal[["hi"]], col_pal[["mi"]])) && (length(unique(icon_types)) < 4)) {
+    ## TODO: Error for bw!
 
     if (by == "all") {
 
@@ -659,7 +660,6 @@ plot_icons <- function(prev = num$prev,             # probabilities
           # for the example of prevalence == 0.15 it may not exceed 0.075.
           diff_dx <- apply(X = blocks[, c(1, 2)], MARGIN = 1, FUN = diff)
 
-          cat("diff_dx:", diff_dx)
           boundary_d <- min(c(abs(diff_dx))) / 2
 
         } else {
@@ -688,7 +688,6 @@ plot_icons <- function(prev = num$prev,             # probabilities
           diff_dx <- apply(X = blocks[, c(1, 2)], MARGIN = 1, FUN = diff)
           diff_dy <- apply(X = blocks[, c(3, 4)], MARGIN = 1, FUN = diff)
 
-          cat("diff_dx:", diff_dx, ", diff_dy: ", diff_dx)
           boundary_d <- min(c(abs(diff_dx), abs(diff_dy))) / 2
 
         }
@@ -700,13 +699,12 @@ plot_icons <- function(prev = num$prev,             # probabilities
 
         }
 
-        cat("block_d:", block_d, ", boundary_d: ", boundary_d)
+        # cat("block_d:", block_d, ", boundary_d: ", boundary_d)
         if ( block_d >= boundary_d ) {
 
           block_d <- boundary_d - 0.0001  # a little messy though...
 
         }
-        print("Error?")
 
 
         ## Only for two blocks:
@@ -734,8 +732,18 @@ plot_icons <- function(prev = num$prev,             # probabilities
           for(i in 1:nrow(blocks)){
             minx <- blocks[i, 1]
             maxx <- blocks[i, 2]
-            miny <- blocks[i, 3]
-            maxy <- blocks[i, 4]
+            miny <- 0
+            maxy <- 1
+
+            # sample vectors from blocks:
+            posx_vec_i <- runif(n = blocks[i, 3], min = minx, max = maxx)
+            posy_vec_i <- runif(n = blocks[i, 3], min = miny, max = maxy)
+
+            posx_vec <- c(posx_vec, posx_vec_i)
+            posy_vec <- c(posy_vec, posy_vec_i)
+          }
+
+
 
         } else {
 
@@ -753,11 +761,10 @@ plot_icons <- function(prev = num$prev,             # probabilities
             posx_vec <- c(posx_vec, posx_vec_i)
             posy_vec <- c(posy_vec, posy_vec_i)
 
-        }
-
-
+          }
 
         }
+
       }
     }
 
@@ -1135,6 +1142,7 @@ plot_icons <- function(prev = num$prev,             # probabilities
     type_lbl <- ""        # assume that no subtitle is desired either
   } else {
     type_lbl <- paste0(lbl["plot_icons_lbl"])  # , "(N = ", N, ")") # plot name: icon array.
+    ## TODO: Cannot access lbl...
   }
 
   # Compose label:
