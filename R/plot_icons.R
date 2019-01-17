@@ -268,7 +268,7 @@ plot_icons <- function(prev = num$prev,             # probabilities
                        arr_type = "array",  # needs to be specified if random position but nonrandom ident.
                        # valid types include: array, shuffled array, mosaic, equal, fillleft, filltop, scatter.
 
-                       by = "all",
+                       by = "all",  # TODO: Not rather use the by-argument like in the mosaic plot?
 
                        # Icon settings:
                        ident_order = c("hi", "mi", "fa", "cr"),
@@ -327,6 +327,7 @@ plot_icons <- function(prev = num$prev,             # probabilities
   # Set default of by perspective:
   if (!(by %in% c("all", "cd", "dc", "ac"))) {
     by <- "all"  # default
+    ## TODO: Throw warning?
   }
 
   # (b) Get current colors from col_pal: ----
@@ -599,7 +600,7 @@ plot_icons <- function(prev = num$prev,             # probabilities
         # seq_min <- (0:(block_sq - 1)) / block_sq  # of minimal coordinates.
         # seq_max <- (1:block_sq) / block_sq
 
-        if ( by %in% c("cd", "dc")) {
+        if ( by %in% c("cd", "dc", "ac")) {
 
           min_ranges <- expand.grid(x_min = c(0, 0.5), y_min = 0)
           max_ranges <- expand.grid(x_max = c(0.5, 1), y_max = 1)  # all combinations of maxima.
@@ -654,7 +655,7 @@ plot_icons <- function(prev = num$prev,             # probabilities
         ## Currently  four blocks are fixedly assumed.
 
         ## Hacky solution:
-        if ( by %in% c("cd", "dc") ) {
+        if ( by %in% c("cd", "dc", "ac") ) {
 
           ## Define boundary:
           b1 <- block_prop[1]
@@ -718,7 +719,7 @@ plot_icons <- function(prev = num$prev,             # probabilities
 
 
         ## Only for two blocks:
-        if ( by %in% c("cd", "dc") ) {
+        if ( by %in% c("cd", "dc", "ac") ) {
 
           blocks[, 1] <- blocks[, 1] + block_d
           blocks[, 2] <- blocks[, 2] - block_d
@@ -737,7 +738,7 @@ plot_icons <- function(prev = num$prev,             # probabilities
         blocks <- cbind(blocks, block_n)  # bind to matrix.
 
         ## Hacky if:
-        if ( by %in% c("cd", "dc") ) {
+        if ( by %in% c("cd", "dc", "ac") ) {
 
           for(i in 1:nrow(blocks)){
             minx <- blocks[i, 1]
