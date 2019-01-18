@@ -656,10 +656,6 @@ plot_icons <- function(prev = num$prev,             # probabilities
 
         block_prop <- type_n / sum(type_n)  # proportion in each compartment.
 
-        ### CURRENTLY HERE!###
-        ## TODO: allow having two blocks only (for by = cd and dc)!
-        ## Currently  four blocks are fixedly assumed.
-
         ## Hacky solution:
         if ( by %in% c("cd", "dc", "ac") ) {
 
