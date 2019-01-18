@@ -383,7 +383,6 @@ plot_icons <- function(prev = num$prev,             # probabilities
 
   # (+) Detect and handle special case of color equality (e.g., pal_bwp):
   if (all_equal(c(col_pal[["hi"]], col_pal[["mi"]])) && (length(unique(icon_types)) < 4)) {
-    ## TODO: Error for bw!
 
     if (by == "all") {
 
