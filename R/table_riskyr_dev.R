@@ -25,8 +25,8 @@ riskyr_table <- function(object, type = "cd") {
 
   ## for user-defined display an additional flexible matrix may be used:
   cnd_dec_lab <- with(object,
-                      matrix(c("hi", "mi", "cond.true", "Sens", "FPR",
-                               "fa", "cr", "cond.false", "FNR", "Spec",
+                      matrix(c("hi", "mi", "cond.true", "Sens", "FNR",
+                               "fa", "cr", "cond.false", "FPR", "Spec",
                                "dec.pos", "dec.neg", "N", "ppod", "ppnd",
                                "PPV", "FOR", "Prev", "Acc", "",
                                "FDR", "NPV", "1-prev", "", ""),
