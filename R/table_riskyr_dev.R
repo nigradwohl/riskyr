@@ -38,9 +38,9 @@ riskyr_table <- function(object, type = "cd") {
   trt_cnd_lab <- with(object,
                       matrix(c("hi", "mi", "treated", "Sens", "FPR",
                                "fa", "cr", "untreated", "FNR", "Spec",
-                               "condition", "no condition", "N", "ppod", "ppnd",
-                               "PPV", "FOR", "Prev", "Acc", "",
-                               "FDR", "NPV", "1-prev", "", ""),
+                               "condition", "no condition", "N", "prev", "1 - prev",
+                               "PPV", "FOR", "ptreated", "Acc", "",
+                               "FDR", "NPV", "puntreated", "", ""),
                              nrow = 5, ncol = 5)
   )
 
@@ -277,7 +277,8 @@ a <- riskyr_table(tst)
 plot(a)
 
 b <- riskyr_table(tst, type = "tc")
-plot(b, by = "dcac")
+plot(b, f_lbl = "nam", p_lbl = "nam")
+plot(b, type = "tree", by = "cdac", f_lbl = "nam", p_lbl = "nam")
 
 # TODO: Here switching perspectives becomes interesting!
 
