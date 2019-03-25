@@ -6,7 +6,7 @@
 
 tst <- riskyr(N = 10, prev = 0.3, sens = 0.8, spec = 0.6)
 
-riskyr_table <- function(object) {
+riskyr_table <- function(object, type = "cd") {
 
 
   ## Note:  this interface is specific to the diagnostic case (alias: riskyr.diagnostic):
@@ -32,6 +32,22 @@ riskyr_table <- function(object) {
                                "FDR", "NPV", "1-prev", "", ""),
                              nrow = 5, ncol = 5)
   )
+
+
+  # Treatment vs. condition:
+  trt_cnd_lab <- with(object,
+                      matrix(c("hi", "mi", "treated", "Sens", "FPR",
+                               "fa", "cr", "untreated", "FNR", "Spec",
+                               "condition", "no condition", "N", "ppod", "ppnd",
+                               "PPV", "FOR", "Prev", "Acc", "",
+                               "FDR", "NPV", "1-prev", "", ""),
+                             nrow = 5, ncol = 5)
+  )
+
+  lab_mat <- switch (type,
+                     cd = cnd_dec_lab,
+                     tc = trt_cnd_lab)
+
 
 
   ## Basic: dim 1 (cnd) and dim 2 (dec)
@@ -66,7 +82,7 @@ riskyr_table <- function(object) {
     scen_lng = object$scen_lng
     )
 
-  obj <- list(dsc = desc, lbl = cnd_dec_lab, num = num_mat)
+  obj <- list(dsc = desc, lbl = lab_mat, num = num_mat)
 
   ## TODO: For now limit to 1st and 2nd dimension!
 
@@ -138,6 +154,10 @@ plot.riskyr.tabular <- function(x = NULL,        # require riskyr scenario
 a <- riskyr_table(tst)
 plot(a)
 
+b <- riskyr_table(tst, type = "tc")
+plot(b, by = "dcac")
+
+# TODO: Here switching perspectives becomes interesting!
 
 ## Summarising riskyr objects: -----------------
 
