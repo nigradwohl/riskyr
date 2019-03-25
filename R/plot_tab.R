@@ -1,5 +1,5 @@
 ## plot_tab.R | riskyr
-## 2019 01 11
+## 2019 01 30
 ## Plot contingency/frequency table
 ## (based on plot_area.R).
 ## -----------------------------------------------
@@ -582,16 +582,18 @@ plot_tab <- function(prev = num$prev,    # probabilities
 
   ## 5. Colors / color palettes: ----
 
-  # (a) Detect and handle special case of color equality (e.g., pal_bwp):
-  # WAS: if (all(col_pal == pal_bwp) && (f_lwd <= tiny_lwd)) {
-  # NOW more general: If color of hi is.equal to current background color:
-  if (all_equal(c(par("bg"), col_pal[["hi"]])) && (f_lwd <= tiny_lwd)) {
+  # (a) Set plot background color:
+  par(bg = col_pal[["bg"]])  # col_pal[["bg"]] / "white" / NA (for transparent background)
+
+  # (b) Detect and handle special cases of color equality (e.g., pal_bwp):
+  if ( (par("bg") %in% col_pal[1:11]) && # if bg is equal to ANY fbox color AND
+       (f_lwd <= tiny_lwd) ) {           # f_lwd is tiny_lwd (default):
     f_lwd <- 1
     if (lty == 0) {lty <- 1}  # prevent lty = 0
     # message(paste0("f_lwd = ", f_lwd, "; col_pal[['brd']] = ",  col_pal[["brd"]], "; lty = ", lty)) # debugging
   }
 
-  # (b) Probability link colors:
+  # (c) Probability link colors:
   if (!is.na(p_lbl)) {  # only when labels OR links are being shown:
 
     # if (!all(col_p %in% colors())) { message("col_p must contain (1 to 3) valid color names.") }
@@ -756,7 +758,7 @@ plot_tab <- function(prev = num$prev,    # probabilities
   # points(0, 0, pch = 1, col = grey(.33, .50), cex = 1)                        # mark origin
 
 
-  ## (5) Main: Custom ct plot: -----------
+  ## (5) Main: Custom table plot: -----------
 
   ##   (a) Plot 4 SDT cases/cells in center (coordinates + boxes): ----------
 
@@ -1228,8 +1230,9 @@ plot_tab <- function(prev = num$prev,    # probabilities
                  cur_freq = freq, lbl_txt = lbl_txt, col_pal = col_pal,  # PASS current freq/txt/pal arguments!
                  lbl_type = f_lbl, lbl_sep = f_lbl_sep, cex = cex_lbl, lwd = f_lwd, lty = lty)  # No ...!
 
-  ##   (+) Check: Mark 2 key points/checkpoints (per plot): ------
+  ##   (+) Check: Mark 2 key points/checkpoints (per plot): NOT RELEVANT for plot_tab! ------
   mark_key_points <- FALSE  # default
+  mark_key_points <- TRUE   # debugging/test
 
   if (mark_key_points) {
 
@@ -1829,8 +1832,6 @@ plot_tab <- function(prev = num$prev,    # probabilities
 
   } # if ( !is.null(p_lbl) && !is.na(p_lbl) )
 
-  ## +++ here now +++
-
   ##   (e) Plot text labels (for 2 perspectives) on 2 sides: ----------
 
   ## (A) top labels (horizontal):
@@ -2054,7 +2055,7 @@ plot_tab <- function(prev = num$prev,    # probabilities
   ## Finish: ---------
 
   # on.exit(par(opar))  # par(opar)  # restore original settings
-  invisible()# restores par(opar)
+  invisible() # restores par(opar)
 
 } # plot_tab end.
 
@@ -2139,7 +2140,11 @@ plot_tab <- function(prev = num$prev,    # probabilities
 
 ## (+) ToDo: ------
 
-## - Shorten and simplify code (when possible).
+## - Allow showing more than 1 set of probabilities at once.
+
+## - Shorten and simplify code:
+#    a. specify perspectives => position of 4 table cells
+#    b. specify probabilities (lines) to be shown
 
 ## (*) Done: ------
 

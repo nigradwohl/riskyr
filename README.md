@@ -1,7 +1,7 @@
 
 <!-- README.md is generated from README.Rmd. Please only edit the latter (.Rmd) file! -->
 <!-- Status badges: -->
-[![CRAN\_Status\_Badge](http://www.r-pkg.org/badges/version/riskyr)](https://CRAN.R-project.org/package=riskyr) [![Build Status](https://travis-ci.org/hneth/riskyr.svg?branch=master)](https://travis-ci.org/hneth/riskyr) [![Downloads](http://cranlogs.r-pkg.org/badges/riskyr?color=brightgreen)](http://www.r-pkg.org/pkg/riskyr) [![Rdoc](http://www.rdocumentation.org/badges/version/riskyr)](http://www.rdocumentation.org/packages/riskyr)
+[![CRAN\_status](http://www.r-pkg.org/badges/version/riskyr)](https://CRAN.R-project.org/package=riskyr) [![Build\_status](https://travis-ci.org/hneth/riskyr.svg?branch=master)](https://travis-ci.org/hneth/riskyr) [![Downloads](http://cranlogs.r-pkg.org/badges/riskyr?color=brightgreen)](http://www.r-pkg.org/pkg/riskyr) [![Rdoc](http://www.rdocumentation.org/badges/version/riskyr)](http://www.rdocumentation.org/packages/riskyr)
 
 <!-- riskyr logo: -->
 riskyr <img src = "./inst/pix/logo.png" align = "right" alt = "riskyr" width = "160" />
@@ -30,15 +30,15 @@ The goals of `riskyr` are less of a *computational* and more of a *representatio
 
 <!-- Defining "risk" (in footnote): -->
 <!-- On "riskyr": -->
-Basic assumptions and goals driving the current development of `riskyr` include:
+The basic assumptions and aspirations driving the current development of `riskyr` include:
 
 1.  Effective training in risk literacy requires transparent representations, smart strategies, and simple tools.
 
-2.  We aim to provide a set of (computational and representational) tools that facilitate various calculations, translations between formats, and a range of alternative views on the interplay between probabilities and frequencies.
+2.  We aim to provide a set of (computational and representational) functions that facilitate various calculations, translations between formats, and enable a range of alternative views on the interplay between probabilities and frequencies.
 
 3.  Just as no single tool fits all tasks, no single graph illustrates all aspects of a problem. A variety of visualizations that illustrate the interplay of parameters and metrics can facilitate active and explorative learning. It is particularly helpful to view relationships from alternative perspectives and to observe the change of one parameter as a function of others.
 
-Based on these assumptions and goals, we provide a range of computational and representational tools. Importantly, the objects and functions in the `riskyr` toolbox are not isolated, but complement, explain, and support each other. All functions and visualizations can also be used separately and explored interactively, providing immediate feedback on the effect of changes in parameter values. By providing a variety of customization options, users can explore and design representations of risk-related information that suit their personal needs and goals.
+Based on these assumptions and goals, `riskyr` provides a range of computational and representational tools. Importantly, the objects and functions in the `riskyr` toolbox are not isolated, but complement, explain, and support each other. All functions and visualizations can be used separately or explored interactively, providing immediate feedback on the effect of changes in parameter values. By providing a variety of customization options, users can explore and design representations of risk-related information that fit to different tasks and meet their personal needs and goals.
 
 Getting riskyr
 --------------
@@ -48,20 +48,20 @@ Getting riskyr
 -   The current release of `riskyr` is available from [CRAN](https://CRAN.R-project.org/) at <https://CRAN.R-project.org/package=riskyr>:
 
 ``` r
-install.packages("riskyr")  # install riskyr from CRAN client
-library("riskyr")           # load to use the package
+install.packages('riskyr')  # install riskyr from CRAN client
+library('riskyr')           # load to use the package
 ```
 
--   The most recent development version can be installed from its [GitHub](https://github.com) repository at <https://github.com/hneth/riskyr/>:
+-   The current development version can be installed from its [GitHub](https://github.com) repository at <https://github.com/hneth/riskyr/>:
 
 ``` r
-# install.packages("devtools")
-devtools::install_github("hneth/riskyr")
+# install.packages('devtools')
+devtools::install_github('hneth/riskyr')
 ```
 
 ### Available resources
 
--   An **interactive online version** is available at <http://riskyr.org>.
+-   An **interactive online version** can be used at <http://riskyr.org>.
 
 -   The **package documentation** is available online:
     -   current release version: <https://hneth.github.io/riskyr/>
@@ -404,7 +404,7 @@ About
 <a href="https://www.spds.uni-konstanz.de/"> <img src = "./inst/pix/uniKn_logo.png" alt = "spds.uni.kn" align = "right" width = "300" style = "width: 300px; float: right; border:20;"/> <!-- <img src = "./inst/pix/uniKn_logo_s.png" alt = "spds.uni.kn" style = "float: right; border:20;"/> --> </a>
 
 `riskyr` originated out of a series of lectures and workshops on risk literacy.
-The current version (0.2.0, as of Dec. 20, 2018) is still under development. Its primary designers are [Hansjörg Neth](https://www.spds.uni-konstanz.de/hans-neth), [Felix Gaisbauer](https://www.spds.uni-konstanz.de/felix-gaisbauer), [Nico Gradwohl](https://www.spds.uni-konstanz.de/nico-gradwohl), and [Wolfgang Gaissmaier](https://www.spds.uni-konstanz.de/prof-dr-wolfgang-gaissmaier), who are researchers at the department of [Social Psychology and Decision Sciences](https://www.spds.uni-konstanz.de) at the [University of Konstanz](https://www.uni-konstanz.de/en/), Germany.
+The current version (0.2.0, as of Dec. 20, 2018) is under active development. Its primary designers are [Hansjörg Neth](https://www.spds.uni-konstanz.de/hans-neth), [Felix Gaisbauer](https://www.spds.uni-konstanz.de/felix-gaisbauer), [Nico Gradwohl](https://www.spds.uni-konstanz.de/nico-gradwohl), and [Wolfgang Gaissmaier](https://www.spds.uni-konstanz.de/prof-dr-wolfgang-gaissmaier), who are researchers at the department of [Social Psychology and Decision Sciences](https://www.spds.uni-konstanz.de) at the [University of Konstanz](https://www.uni-konstanz.de/en/), Germany.
 
 The `riskyr` package is open source software written in [R](https://www.r-project.org/) and released under the [GPL 2](https://tldrlegal.com/license/gnu-general-public-license-v2) | [GPL 3](https://tldrlegal.com/license/gnu-general-public-license-v3-(gpl-3)) licenses.
 
@@ -531,7 +531,7 @@ Calling `citation("riskyr")` in the package also displays this information.
 -   Wassner, C., Martignon, L., & Biehler, R. (2004). Bayesianisches Denken in der Schule. *Unterrichtswissenschaft*, *32*, 58–96.
 
 <!-- Update: -->
-\[Updated 2019-01-13 by [hn](http://neth.de).\]
+\[Updated 2019-02-20 by [hn](http://neth.de).\]
 
 <!-- eof -->
 

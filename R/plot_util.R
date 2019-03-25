@@ -1,5 +1,5 @@
 ## plot_util.R | riskyr
-## 2019 01 13
+## 2019 02 21
 ## Helper functions for plotting objects (freq/prob, boxes/lines).
 ## -----------------------------------------------
 
@@ -1003,10 +1003,10 @@ plot_cbox <- function(x,  y,    # coordinates of box CENTER (x and y)
   ## (0) Parameters (currently fixed):
 
   # Compute box coordinates:
-  x_left = (x - lx/2)
-  x_right = x_left + lx
-  y_bottom = (y - ly/2)
-  y_top = y_bottom + ly
+  x_left <- (x - lx/2)
+  x_right <- (x_left + lx)
+  y_bottom <- (y - ly/2)
+  y_top <- (y_bottom + ly)
 
   ## (1) Plot rectangle:
 
@@ -1057,9 +1057,9 @@ plot_cbox <- function(x,  y,    # coordinates of box CENTER (x and y)
 
 }
 
-## Check:
+# ## Check:
 # plot(0:1, 0:1, type = "n", xlab = "x-axis", ylab = "y-axis",
-#     xlim = c(0, 10), ylim = c(0, 6))
+#      xlim = c(0, 10), ylim = c(0, 6))
 #
 # plot_cbox(1, 5, 1, 1)  # default color, no text labels
 #
@@ -1169,6 +1169,7 @@ plot_fbox <- function(fname,   # name of a known frequency (freq)
 ### Check:
 # plot(0:1, 0:1, type = "n", xlab = "x-axis", ylab = "y-axis",
 #        xlim = c(0, 10), ylim = c(0, 10))  # empty canvas
+#
 # # Aspect ratio of current plot:
 # plot_xy <- par("pin")                # use par("pin") OR dev.size("in")
 # plot_ratio <- plot_xy[1]/plot_xy[2]  # current aspect ratio
@@ -2252,7 +2253,8 @@ make_cond_lbl <- function(prev, sens, spec) {
 
   # (2) Parts:
 
-  # (a) prev:
+  # (a) prev: ----
+
   if ( (length(prev) == 1) && is.na(prev) ) {  # prev is 1 NA value:
 
     prev_lbl <- "prev = NA, "
@@ -2283,20 +2285,69 @@ make_cond_lbl <- function(prev, sens, spec) {
   } # ( (length(prev) == 1) && is.na(prev) ) etc.
 
 
-  # (b) sens:
-  if (is.na(sens)) {
+  # (b) sens: ----
+
+  if ( (length(sens) == 1) && is.na(sens) ) {  # sens is 1 NA value:
+
     sens_lbl <- "sens = NA, "
-  } else {
-    sens_lbl <- paste0("sens = ", as_pc(sens, n_digits = 1), "%, ")
-  } # (is.na(sens)) etc.
+
+  } else if ( (length(sens) == 1) && !is.na(sens) ) {  # sens is 1 value, but not NA:
+
+    if (sens < .01) {
+      sens_lbl <- paste0("sens = ", as_pc(sens, n_digits = 4), "%, ")  # exact sens value
+    } else {
+      sens_lbl <- paste0("sens = ", as_pc(sens, n_digits = 1), "%, ")  # round sens value
+    }
+
+  } else if ( (length(sens) > 1) ) {  # sens contains multiple values:
+
+    if (min(sens) < .01) {
+      # sens_pcs <- paste0(as_pc(sens), "%", collapse = "/")  # percentages (with %)
+      sens_pcs <- paste0(as_pc(sens, n_digits = 4), collapse = "/")  # exact percentages (without %)
+    } else {
+      sens_pcs <- paste0(as_pc(sens, n_digits = 1), collapse = "/")  # rounded percentages (without %)
+    }
+
+    sens_lbl <- paste0("sens = ", sens_pcs, "%, ")
+
+  } else {  # sens is something else:
+
+    sens_lbl <- paste0("sens = ?, ")
+
+  } # ( (length(sens) == 1) && is.na(sens) ) etc.
 
 
-  # (c) spec:
-  if (is.na(spec)) {
+  # (c) spec: ----
+
+  if ( (length(spec) == 1) && is.na(spec) ) {  # spec is 1 NA value:
+
     spec_lbl <- "spec = NA, "
-  } else {
-    spec_lbl <- paste0("spec = ", as_pc(spec, n_digits = 1), "%")  # end of label.
-  } # (is.na(spec)) etc.
+
+  } else if ( (length(spec) == 1) && !is.na(spec) ) {  # spec is 1 value, but not NA:
+
+    if (spec < .01) {
+      spec_lbl <- paste0("spec = ", as_pc(spec, n_digits = 4), "%, ")  # exact spec value
+    } else {
+      spec_lbl <- paste0("spec = ", as_pc(spec, n_digits = 1), "%, ")  # round spec value
+    }
+
+  } else if ( (length(spec) > 1) ) {  # spec contains multiple values:
+
+    if (min(spec) < .01) {
+      # sens_pcs <- paste0(as_pc(spec), "%", collapse = "/")  # percentages (with %)
+      sens_pcs <- paste0(as_pc(spec, n_digits = 4), collapse = "/")  # exact percentages (without %)
+    } else {
+      sens_pcs <- paste0(as_pc(spec, n_digits = 1), collapse = "/")  # rounded percentages (without %)
+    }
+
+    spec_lbl <- paste0("spec = ", sens_pcs, "%, ")
+
+  } else {  # spec is something else:
+
+    spec_lbl <- paste0("spec = ?, ")
+
+  } # ( (length(spec) == 1) && is.na(spec) ) etc.
+
 
 
   # (3) Combine into overall label:
@@ -2657,67 +2708,97 @@ factors_min_diff <- function (n) {
 }
 
 
-## box_text: Add text with background box to a plot ------
-## from https://stackoverflow.com/questions/45366243/text-labels-with-background-colour-in-r
+## box_text: Add text with a colored background box to a plot ------
 
-## Add text with background box to a plot
+## Adapted from Ian Kopacka's solution to a question at:
+## https://stackoverflow.com/questions/45366243/text-labels-with-background-colour-in-r
 
+# Documentation: ----
+
+####
+#
 # \code{box_text} places a text given in the vector \code{labels}
 # onto a plot in the base graphics system and places a coloured box behind
 # it to make it stand out from the background.
-
-# @param x numeric vector of x-coordinates where the text labels should be
+#
+# @param x Numeric vector of x-coordinates where the text labels should be
 # written. If the length of \code{x} and \code{y} differs, the shorter one
 # is recycled.
-# @param y numeric vector of y-coordinates where the text labels should be
+#
+# @param y Numeric vector of y-coordinates where the text labels should be
 # written.
-# @param labels a character vector specifying the text to be written.
-# @param col.text the colour of the text
-# @param col.bg color(s) to fill or shade the rectangle(s) with. The default
+#
+# @param labels A character vector specifying the text labels to be written.
+#
+# @param col_lbl The color of the text label(s).
+#
+# @param col_bg The color(s) to fill or shade the rectangle(s) with. The default
 # \code{NA} means do not fill, i.e., draw transparent rectangles.
-# @param border.bg color(s) for rectangle border(s). The default \code{NA}
-# omits borders.
-# @param adj one or two values in [0, 1] which specify the x (and optionally
-# y) adjustment of the labels.
-# @param pos a position specifier for the text. If specified this overrides
-# any adj value given. Values of 1, 2, 3 and 4, respectively indicate
+#
+# @param col_bg_brd The color(s) for rectangle border(s).
+# The default \code{NA} omits borders.
+#
+# @param adj One or two adjustment values in \code{[0, 1]} which specify
+# the x (and optionally y) adjustment of the labels.
+#
+# @param pos A position specifier for the text. If specified this overrides
+# any \code{adj} value given. Values of 1, 2, 3 and 4, respectively indicate
 # positions below, to the left of, above and to the right of the specified
 # coordinates.
-# @param offset when \code{pos} is specified, this value gives the offset of
+#
+# @param offset When \code{pos} is specified, this value sets the offset of
 # the label from the specified coordinate in fractions of a character width.
-# @param padding factor used for the padding of the box around
+#
+# @param padding A factor used for the padding of the box around
 # the text. Padding is specified in fractions of a character width. If a
-# vector of length two is specified then different factors are used for the
+# vector of length 2 is specified then 2 different factors are used for the
 # padding in x- and y-direction.
-# @param cex numeric character expansion factor; multiplied by
-# code{par("cex")} yields the final character size.
-# @param font the font to be used
 #
-# @return Returns the coordinates of the background rectangle(s). If
-# multiple labels are placed in a vactor then the coordinates are returned
+# @param cex A numeric character expansion factor, which is
+# multiplied by \code{par("cex")} to yield the final character size.
+#
+# @param font The font to be used.
+# Default: \code{font = 2} (bold).
+#
+# @return Returns the coordinates of the background rectangle(s).
+# If multiple labels are placed in a vector then the coordinates are returned
 # as a matrix with columns corresponding to xleft, xright, ybottom, ytop.
-# If just one label is placed, the coordinates are returned as a vector.
+# If only one label is placed, its coordinates are returned as a vector.
 #
-# @author Ian Kopacka
+# @author Adapted from code by Ian Kopacka.
 #
 # @examples
-# ## Create noisy background
-# plot(x = runif(1000), y = runif(1000), type = "p", pch = 16,
-# col = "#40404060")
-# box_text(x = 0.5, y = 0.5, labels = "some Text", col.bg = "#b2f4f480",
-#    pos = 4, font = 2, cex = 1.3, padding = 1)
+#
+# ## Create some noisy background:
+# plot(x = runif(500), y = runif(500), type = "p", pch = 16, cex = 3, col = grey(.33, .10))
+#
+# ## Adjust cex, font and adj:
+# box_text(x = .01, y = .95, lbls = "What a messy plot",
+#          col_bg = "skyblue1", adj = c(0, 0), padding = c(.25, .75), cex = 1.8)
+#
+# ## Vector of 2 lbls, using argument 'pos' to position right of coordinates:
+# box_text(x = c(.15, .60), y = c(.10, .50),
+#          lbls = c("Some highlighted text here.", "Something else here."),
+#          col_bg = c("skyblue2", "gold"), pos = 4, padding = c(.25, 1))
+#
+# @import graphics
+#
+####
 
-box_text <- function(x, y, labels = NA, col.text = NULL, col.bg = NA,
-                     border.bg = NA, adj = NULL, pos = NULL, offset = 0.5,
-                     padding = c(0.5, 0.5), cex = 1, font = graphics::par('font')){
+# Definition: ----
 
-  ## The Character expansion factro to be used:
-  theCex <- graphics::par('cex') * cex
+box_text <- function(x, y, labels = NA,
+                     col_lbl = NULL, col_bg = NA, col_bg_brd = NA,
+                     adj = NULL, pos = NULL, offset = .5, padding = c(.5, .5),
+                     cex = 1, font = 2){
 
-  ## Is y provided:
-  if (missing(y)) y <- x
+  # Interpret inputs:
+  cur_font <- graphics::par('font')
+  cur_cex <- graphics::par('cex') * cex  # character expansion factor to use
 
-  ## Recycle coords if necessary:
+  if (missing(y)) {y <- x}  # use x as y if no y provided
+
+  # Recycle coords if necessary:
   if (length(x) != length(y)){
     lx <- length(x)
     ly <- length(y)
@@ -2728,14 +2809,12 @@ box_text <- function(x, y, labels = NA, col.text = NULL, col.bg = NA,
     }
   }
 
-  ## Width and height of text:
-  textHeight <- graphics::strheight(labels, cex = theCex, font = font)
-  textWidth  <- graphics::strwidth(labels, cex = theCex, font = font)
+  # Determine dimensions of text elements:
+  text_height <- graphics::strheight(labels, cex = cur_cex, font = font) # text height(s)
+  text_width  <- graphics::strwidth(labels, cex = cur_cex, font = font)  # text width(s)
+  char_width <- graphics::strwidth("e", cex = cur_cex, font = font) # character "e" width
 
-  ## Width of 1 character:
-  charWidth <- graphics::strwidth("e", cex = theCex, font = font)
-
-  ## Is 'adj' of length 1 or 2?
+  # Is 'adj' of length 1 or 2?
   if (!is.null(adj)){
     if (length(adj == 1)){
       adj <- c(adj[1], 0.5)
@@ -2744,71 +2823,72 @@ box_text <- function(x, y, labels = NA, col.text = NULL, col.bg = NA,
     adj <- c(0.5, 0.5)
   }
 
-  ## Is 'pos' specified?
+  # Is 'pos' specified?
   if (!is.null(pos)){
     if (pos == 1){
       adj <- c(0.5, 1)
-      offsetVec <- c(0, -offset*charWidth)
+      offset_vec <- c(0, -offset * char_width)
     } else if (pos == 2){
       adj <- c(1, 0.5)
-      offsetVec <- c(-offset*charWidth, 0)
+      offset_vec <- c(-offset * char_width, 0)
     } else if (pos == 3){
       adj <- c(0.5, 0)
-      offsetVec <- c(0, offset*charWidth)
+      offset_vec <- c(0, offset * char_width)
     } else if (pos == 4){
       adj <- c(0, 0.5)
-      offsetVec <- c(offset*charWidth, 0)
+      offset_vec <- c(offset * char_width, 0)
     } else {
       stop('Invalid argument pos')
     }
   } else {
-    offsetVec <- c(0, 0)
+    offset_vec <- c(0, 0)
   }
 
-  ## Padding for boxes:
-  if (length(padding) == 1){
+  # Padding for boxes:
+  if (length(padding) == 1){ # only 1 value provided:
     padding <- c(padding[1], padding[1])
   }
 
-  ## Midpoints for text:
-  xMid <- x + (-adj[1] + 1/2)*textWidth + offsetVec[1]
-  yMid <- y + (-adj[2] + 1/2)*textHeight + offsetVec[2]
+  # Compute midpoints of text(s):
+  x_mid <- x + (-adj[1] + 1/2) * text_width + offset_vec[1]
+  y_mid <- y + (-adj[2] + 1/2) * text_height + offset_vec[2]
 
-  ## Draw rectangles:
-  rectWidth <- textWidth + 2*padding[1]*charWidth
-  rectHeight <- textHeight + 2*padding[2]*charWidth
-  graphics::rect(xleft = xMid - rectWidth/2,
-                 ybottom = yMid - rectHeight/2,
-                 xright = xMid + rectWidth/2,
-                 ytop = yMid + rectHeight/2,
-                 col = col.bg, border = border.bg)
+  # Draw rectangle(s):
+  rect_width <- text_width + 2 * padding[1] * char_width
+  rect_height <- text_height + 2 * padding[2] * char_width
+  graphics::rect(xleft = x_mid - rect_width/2,
+                 ybottom = y_mid - rect_height/2,
+                 xright = x_mid + rect_width/2,
+                 ytop = y_mid + rect_height/2,
+                 col = col_bg, border = col_bg_brd)
 
-  ## Place the text:
-  graphics::text(xMid, yMid, labels, col = col.text, cex = theCex, font = font,
+  # Place text(s):
+  graphics::text(x_mid, y_mid, labels, col = col_lbl, cex = cur_cex, font = font,
                  adj = c(0.5, 0.5))
 
-  ## Return value:
-  if (length(xMid) == 1){
-    invisible(c(xMid - rectWidth/2, xMid + rectWidth/2, yMid - rectHeight/2,
-                yMid + rectHeight/2))
-  } else {
-    invisible(cbind(xMid - rectWidth/2, xMid + rectWidth/2, yMid - rectHeight/2,
-                    yMid + rectHeight/2))
+  # Return value(s):
+  if (length(x_mid) == 1){  # Coordinates of 1 rectangle:
+    invisible(c(x_mid - rect_width/2, x_mid + rect_width/2, y_mid - rect_height/2,
+                y_mid + rect_height/2))
+  } else {  # Coordinates of rectangles:
+    invisible(cbind(x_mid - rect_width/2, x_mid + rect_width/2, y_mid - rect_height/2,
+                    y_mid + rect_height/2))
   }
-}
 
-## Check:
-# ## Create a noisy background:
+} # box_text end.
+
+# ## Check:
+# ## Create some noisy background:
 # plot(x = runif(500), y = runif(500), type = "p", pch = 16, cex = 3, col = "#40404060")
-#
-# ## Vector of labels, using argument 'pos' to position right of coordinates:
-# box_text(x = c(.1, .6), y = c(.1, .6), labels = c("Some highlighted text here.", "Something else here."),
-#         col.bg = "gold", pos = 4, padding = 0.2)
 #
 # ## Adjust cex, font and adj:
 # box_text(x = .1, y = .9, labels = "Some messy data plot",
-#         col.bg = "skyblue", adj = c(0, 0.6), font = 2, cex = 1.8)
-
+#          col_bg = "skyblue1", adj = c(0, .6), padding = c(.25, .75), cex = 1.8)
+#
+# ## Vector of 2 labels, using argument 'pos' to position right of coordinates:
+# box_text(x = c(.1, .6), y = c(.1, .5),
+#          labels = c("Some highlighted text here.", "Something else here."),
+#          col_bg = c("gold", "skyblue2"), pos = 4, padding = c(.25, 1))
 
 
 ## add_legend: Reformat the plot area to place legend outside of plot ------
@@ -2831,9 +2911,6 @@ add_legend <- function(...) {
 
 ## Check:
 # add_legend()  # requires a legend argument.
-
-
-
 
 
 ## (*) Done: ----------
