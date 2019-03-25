@@ -50,7 +50,23 @@ riskyr_table <- function(object) {
                   )
   )
 
-  obj <- list(lbl = cnd_dec_lab, num = num_mat)
+
+  ## Descriptive information:
+  desc <- list(
+    scen_lbl = object$scen_lbl,
+    popu_lbl = object$popu_lbl,
+    sdt_lbl = object$sdt_lbl,
+
+    cond_lbl = object$cond_lbl,
+    dec_lbl = object$dec_lbl,
+
+    scen_txt = object$scen_txt,
+    scen_src = object$scen_src,
+    scen_apa = object$scen_apa,
+    scen_lng = object$scen_lng
+    )
+
+  obj <- list(dsc = desc, lbl = cnd_dec_lab, num = num_mat)
 
   ## TODO: For now limit to 1st and 2nd dimension!
 
@@ -70,9 +86,57 @@ plot.riskyr.tabular <- function(x = NULL,        # require riskyr scenario
                         # by = "cddc",   # default perspective
                         ...) {
 
+  nums <- x$num  # numerical information.
+  lbls <- x$lbl  # adjusted label information.
+
+  # TODO: Ultimately, functions should rely on the tabular representation to be more flexible.
+
+  x_txt <- init_txt(scen_lbl = x$dsc$scen_lbl,
+
+                    popu_lbl = x$dsc$popu_lbl,
+                    N_lbl = lbls[3, 3],
+
+                    cond_lbl = x$dsc$cond_lbl,
+                    cond_true_lbl = lbls[3, 1],
+                    cond_false_lbl = lbls[3, 2],
+
+                    dec_lbl  = x$dsc$dec_lbl,
+                    dec_pos_lbl = lbls[1, 3],
+                    dec_neg_lbl = lbls[2, 3],
+
+                    acc_lbl = lbls[4, 4],
+                    dec_cor_lbl = "",  # TODO!
+                    dec_err_lbl = "x$dec_err_lbl",
+
+                    sdt_lbl = x$dsc$sdt_lbl,
+                    hi_lbl = lbls[1, 1],
+                    mi_lbl = lbls[2, 1],
+                    fa_lbl = lbls[1, 2],
+                    cr_lbl = lbls[2, 2],
+
+                    scen_txt = x$dsc$scen_txt,
+                    scen_src = x$dsc$scen_src,
+                    scen_apa = x$dsc$scen_apa,
+                    scen_lng = x$dsc$scen_lng
+  )
+
+  plot_tab(prev = nums[3, 4],
+           sens = nums[4, 1], mirt = NA,
+           spec = nums[5, 2], fart = NA,
+           N = nums[3, 3],
+           # Options:
+           lbl_txt = x_txt,
+           title_lbl = "",  # x$scen_lbl,  # TODO: Commented out for the moment.
+           ...
+  )
 
 }
 
+
+
+## Test examples: --------
+a <- riskyr_table(tst)
+plot(a)
 
 
 ## Summarising riskyr objects: -----------------
