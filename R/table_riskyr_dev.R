@@ -102,6 +102,33 @@ plot.riskyr.tabular <- function(x = NULL,        # require riskyr scenario
                         # by = "cddc",   # default perspective
                         ...) {
 
+
+  type <- tolower(type)  # ensure lowercase
+
+  # Test type argument:
+  if (!type %in% c(#
+    # plot_prism:
+    "prism", "fprism", "tree", "ftree", "net", "fnet", "network",
+    # plot_area:
+    "area", "farea", "mosaic",
+    # plot_tab:
+    "tab", "table", "ftab", "ctab",
+    # plot_icons:
+    "icon", "icons", "iconarray",
+    # plot_bar:
+    "bar", "bars", "barplot", "fbar",
+    # plot_curve:
+    "curve", "curves",
+    # plot_plane:
+    "plane", "planes", "cube")) {
+
+    message("Unknown plot type (in plot.riskyr): Using type = 'prism'.")
+    type <- "prism"
+
+  }
+
+
+## Get central inputs:
   nums <- x$num  # numerical information.
   lbls <- x$lbl  # adjusted label information.
 
@@ -136,15 +163,110 @@ plot.riskyr.tabular <- function(x = NULL,        # require riskyr scenario
                     scen_lng = x$dsc$scen_lng
   )
 
-  plot_tab(prev = nums[3, 4],
-           sens = nums[4, 1], mirt = NA,
-           spec = nums[5, 2], fart = NA,
-           N = nums[3, 3],
-           # Options:
-           lbl_txt = x_txt,
-           title_lbl = "",  # x$scen_lbl,  # TODO: Commented out for the moment.
-           ...
-  )
+
+  if ((substr(type, 1, 3) == "tab") || (type == "ftab") || (type == "ctab")) {
+
+    plot_tab(prev = nums[3, 4],
+             sens = nums[4, 1], mirt = nums[5, 1],
+             spec = nums[5, 2], fart = nums[4, 2],
+             N = nums[3, 3],
+             # Options:
+             lbl_txt = x_txt,
+             title_lbl = x_txt$scen_lbl,
+             ...
+    )
+  } # if (type == "tab")
+
+  ## 2. Area / mosaic plot:
+  if ((substr(type, 1, 4) == "area") || (type == "farea") ||
+      (substr(type, 1, 6) == "mosaic")) {  # "mosaic"
+
+    plot_area(prev = nums[3, 4],
+              sens = nums[4, 1], mirt = nums[5, 1],
+              spec = nums[5, 2], fart = nums[4, 2],
+              N = nums[3, 3],
+              # Options:
+              lbl_txt = x_txt,
+              title_lbl = x_txt$scen_lbl,
+              ...
+    )
+
+  } # if (type == "area")
+
+  ## 3. Icon array:
+  if (substr(type, 1, 4) == "icon") {
+
+    plot_icons(prev = nums[3, 4],
+               sens = nums[4, 1], mirt = nums[5, 1],
+               spec = nums[5, 2], fart = nums[4, 2],
+               N = nums[3, 3],
+               # Options:
+               lbl_txt = x_txt,
+               title_lbl = x_txt$scen_lbl,
+               ...
+    )
+
+  } #  if (type == "icon")
+
+  ## 4. Prism plot:
+  if ((substr(type, 1, 5) == "prism") || (substr(type, 1, 6) == "fprism") ||
+      (substr(type, 1, 3) == "net")   || (substr(type, 1, 4) == "fnet")   ||
+      (substr(type, 1, 4) == "tree")  || (substr(type, 1, 5) == "ftree")) {
+
+    plot_prism(prev = nums[3, 4],
+               sens = nums[4, 1], mirt = nums[5, 1],
+               spec = nums[5, 2], fart = nums[4, 2],
+               N = nums[3, 3],
+               # Options:
+               lbl_txt = x_txt,
+               title_lbl = x_txt$scen_lbl,
+               ...
+    )
+
+  } # if (type == "prism")
+
+  ## 5. Bar plot / frequency bars:
+  if ((substr(type, 1, 3) == "bar") || (substr(type, 1, 4) == "fbar")) {
+
+    plot_bar(prev = nums[3, 4],
+             sens = nums[4, 1], mirt = nums[5, 1],
+             spec = nums[5, 2], fart = nums[4, 2],
+             N = nums[3, 3],
+             # Options:
+             lbl_txt = x_txt,
+             title_lbl = x_txt$scen_lbl,
+             ...
+    )
+
+  } # if (type == "bar")
+
+  ## 6. Curve of probabilities:
+  if (substr(type, 1, 5) == "curve") {
+
+    plot_curve(prev = nums[3, 4],
+               sens = nums[4, 1], mirt = nums[5, 1],
+               spec = nums[5, 2], fart = nums[4, 2],
+               N = nums[3, 3],
+               # Options:
+               lbl_txt = x_txt,
+               title_lbl = x_txt$scen_lbl,
+               ...
+    )
+  } # if (type == "curve")
+
+  ## 7. Plane/cube of probabilities:
+  if ((substr(type, 1, 5) == "plane") || (substr(type, 1, 4) == "cube")) {
+
+    plot_plane(prev = nums[3, 4],
+               sens = nums[4, 1], mirt = nums[5, 1],
+               spec = nums[5, 2], fart = nums[4, 2],
+               N = nums[3, 3],
+               # Options:
+               lbl_txt = x_txt,
+               title_lbl = x_txt$scen_lbl,
+               ...
+    )
+  } # if (type == "plane")
 
 }
 
