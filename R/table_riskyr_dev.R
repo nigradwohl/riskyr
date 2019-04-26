@@ -4,7 +4,7 @@
 
 ## Function takes a riskyr object and transforms it into a matrix: ---------
 
-tst <- riskyr(N = 10, prev = 0.3, sens = 0.8, spec = 0.6)
+tst <- riskyr(N = 10, prev = 0.3, sens = 0.8, spec = 0.6)  # riskyr object for testing.
 
 riskyr_table <- function(object, type = "cd") {
 
@@ -277,8 +277,9 @@ a <- riskyr_table(tst)
 plot(a)
 
 b <- riskyr_table(tst, type = "tc")
-plot(b, f_lbl = "nam", p_lbl = "nam")
+plot(b, f_lbl = "nam")
 plot(b, type = "tree", by = "cdac", f_lbl = "nam", p_lbl = "nam")
+plot(b, type = "icons", lbl_txt = b$lbl)  # TODO: does not work!
 
 # TODO: Here switching perspectives becomes interesting!
 
